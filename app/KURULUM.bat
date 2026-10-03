@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 cd /d "%~dp0"
-echo JARVIS v0.6 kurulumu - Python 3.11 veya 3.12 gerektirir.
+echo JARVIS v0.7 kurulumu - Python 3.11 veya 3.12 gerektirir.
 py -3.12 -V >nul 2>&1
 if not errorlevel 1 (
     py -3.12 -m venv .venv

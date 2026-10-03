@@ -1,4 +1,4 @@
-# JARVIS v0.6 — seçilen ElevenLabs sesi
+# JARVIS v0.7 — telefon bağlantısı ve Gemini web arayüzü
 
 JARVIS artık bir konuşma motoruna bağlandığında doğal Türkçe sohbet eder ve
 izin verilen bilgisayar işlemlerini konuşma içinden yönetir. Ana ekranda
@@ -8,7 +8,7 @@ hatırlatmalar ve ayarlar bulunur.
 ## v0.2/v0.3'ten güncelleme
 
 JARVIS v0.2'yi aç → Ayarlar → Güncellemeyi denetle → Yeni sürümü yükle.
-Bağlı `update_source.txt` dosyası varsa v0.6 görünür. Uygulama kapanır,
+Bağlı `update_source.txt` dosyası varsa v0.7 görünür. Uygulama kapanır,
 ZIP'in SHA-256 özetini doğrular, kaynakları değiştirir, yeni bağımlılıkları
 kurar ve yeniden açılır. Notlar `%LOCALAPPDATA%\Jarvis\memory.sqlite3`
 içinde kalır. Eski v0.2 kurulumunda güncelleme kaynağı görünmüyorsa
@@ -70,3 +70,7 @@ Ayarlar → JARVIS ses düzeyi kaydırıcısı 0–100 arasındadır. 0 sessizdi
 ## ElevenLabs sesi
 
 Ayarlar → JARVIS konuşma sesi bölümüne kendi ElevenLabs API anahtarını gir ve **Seçilen sesi kullan** düğmesine bas. Kullanılan ses kimliği `IKne3meq5aSn9XLyUdCD`, model `eleven_multilingual_v2` ve çıkış MP3’tür. Anahtar uygulamanın bu oturum belleğindedir ve dosyaya yazılmaz. `ELEVENLABS_API_KEY` Windows ortam değişkeni varsa açılışta da kullanılabilir. Sesli yanıt ElevenLabs servisine gönderilir; API bağlantısı çalışmazsa önceki Türkçe sese dönülür. Ses düzeyi kaydırıcısı bu seste de çalışır.
+
+## Telefon bağlantısı
+
+Web arayüzü GitHub deposundaki `web/` klasöründedir. Vercel projesi Root Directory `web` ile dağıtılır. Gemini anahtarı Vercel ortam değişkeninde tutulur. Telefondan Windows işlemleri için ayrıca Upstash Redis ve `JARVIS_BRIDGE_TOKEN` gerekir. Windows uygulamasında Ayarlar → Telefon bağlantısı bölümüne HTTPS Vercel adresini ve köprü anahtarını gir. Uygulama açık kaldığında yalnızca izinli işlemler, telefondaki ayrı onaydan sonra uygulanır. Ayrıntılar `web/README.md` içindedir.

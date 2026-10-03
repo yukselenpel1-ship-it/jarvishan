@@ -1,9 +1,10 @@
 # JARVIS
 
-Türkçe konuşan ve kontrollü bilgisayar işlemleri yapan Windows masaüstü asistanı.
+Türkçe konuşan Windows ve mobil web asistanı.
 
-- [v0.6 Windows indirme paketi](downloads/JARVIS_v0.6_Windows.zip)
-- [Kurulum ve kullanım](app/README.md)
-- [Kaynak kod](app/)
+- [Mobil web uygulaması ve Vercel kurulumu](web/README.md)
+- [Antigravity geliştirme özeti](web/ANTIGRAVITY_BRIEF.md)
+- [v0.7 Windows indirme paketi](downloads/JARVIS_v0.7_Windows.zip)
+- [Windows kurulum ve kullanım](app/README.md)
 
-Kurulu sürüm içinden **Ayarlar → Güncellemeyi denetle → Yeni sürümü yükle** yoluyla güncelleyebilirsin.
+Kurulu masaüstü sürümünde **Ayarlar → Güncellemeyi denetle → Yeni sürümü yükle** yoluyla güncelleyebilirsin. Vercel projesinin Root Directory değeri `web` olmalıdır.

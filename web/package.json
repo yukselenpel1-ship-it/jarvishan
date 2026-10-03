@@ -1,0 +1,11 @@
+{
+  "name": "jarvis-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file=.env.local dev.mjs",
+    "test": "node tests/api.test.js"
+  },
+  "engines": {"node": ">=20"}
+}

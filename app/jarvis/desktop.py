@@ -17,6 +17,7 @@ from .voice import Voice, JARVIS_VOICE_ID
 from .updates import UpdateClient
 from .agent import Agent
 from .computer import describe, perform
+from .remote import RemoteBridge
 
 
 def local_command(text):
@@ -80,6 +81,15 @@ class DesktopAPI:
         self._running = True
         self._timer = threading.Thread(target=self._reminders, daemon=True)
         self._timer.start()
+        self.remote = None
+        self.remote_config_path = data_dir() / 'remote_bridge.json'
+        if self.remote_config_path.is_file():
+            try:
+                saved=json.loads(self.remote_config_path.read_text(encoding='utf-8'))
+                self.remote=RemoteBridge(saved['url'],saved['token'],self.events)
+                self.remote.start()
+            except (OSError, ValueError, KeyError, TypeError):
+                self.remote=None
 
     def initial(self):
         return {'version': __version__, 'notes': self.notes(), 'reminders': self.reminders(),
@@ -87,6 +97,8 @@ class DesktopAPI:
                 'voice_volume': self.voice.volume,
                 'elevenlabs_configured': bool(self.voice.elevenlabs_key),
                 'voice_id': JARVIS_VOICE_ID,
+                'remote_configured': self.remote is not None,
+                'remote_url': self.remote.url if self.remote else '',
                 'model': self.agent.openai_model, 'local_model': self.agent.local_model,
                 'provider': self.agent.provider, 'api_configured': bool(self.agent.key),
                 'chat_ready': bool(self.agent.selected_provider()),
@@ -229,6 +241,25 @@ class DesktopAPI:
         self.voice.elevenlabs_key = ''
         return {'ok': True, 'message': 'Varsayılan Türkçe sese dönüldü.'}
 
+    def connect_remote(self, url, token):
+        try:
+            if not isinstance(url,str) or not isinstance(token,str): raise ValueError()
+            token=token.strip() or (self.remote.token if self.remote else '')
+            bridge=RemoteBridge(url.strip(),token,self.events)
+            self.remote_config_path.write_text(json.dumps({'url':bridge.url,'token':token}),encoding='utf-8')
+            if self.remote:self.remote.close()
+            self.remote=bridge
+            self.remote.start()
+            return {'ok':True,'message':'Mobil bağlantı başlatıldı. Web arayüzünden bilgisayar durumunu kontrol et.'}
+        except (OSError,ValueError):
+            return {'ok':False,'message':'HTTPS web adresini ve en az 16 karakterlik köprü anahtarını gir.'}
+
+    def disconnect_remote(self):
+        if self.remote:self.remote.close()
+        self.remote=None
+        self.remote_config_path.unlink(missing_ok=True)
+        return {'ok':True,'message':'Mobil bağlantı kapatıldı.'}
+
     def _save_settings(self):
         self.config_path.write_text(json.dumps({'provider':self.agent.provider,
             'openai_model':self.agent.openai_model,'local_model':self.agent.local_model,
@@ -317,6 +348,7 @@ class DesktopAPI:
 
     def close(self):
         self._running = False
+        if self.remote:self.remote.close()
         self.voice.close()
 
 

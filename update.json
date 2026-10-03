@@ -1,6 +1,6 @@
 {
-  "version": "0.6.0",
-  "url": "https://raw.githubusercontent.com/yukselenpel1-ship-it/jarvishan/main/downloads/JARVIS_v0.6_Windows.zip",
-  "sha256": "0d26213f026b7a96dca5bec740e8ee2bade61ad1d93163cdd6c706c7d052b055",
-  "notes": "Seçilen ElevenLabs ses kimliği, API anahtarı ayarı ve ses düzeyi desteği."
+  "version": "0.7.0",
+  "url": "https://raw.githubusercontent.com/yukselenpel1-ship-it/jarvishan/main/downloads/JARVIS_v0.7_Windows.zip",
+  "sha256": "81d92c56092e3dc0ad7c3d13c05c21ddf0ccdd914c60ad57119d9cd749db5a7a",
+  "notes": "Mobil Vercel bağlantısı ve güvenli Windows işlem köprüsü."
 }
