@@ -1,3 +1,9 @@
-# JARVISHAN
+# JARVIS
 
-Türkçe masaüstü asistanı. Kaynak kod `app/`, Windows kurulum paketi `downloads/` ve sabit güncelleme manifesti `update.json` konumundadır. Kurulum ve kullanım bilgileri için [uygulama rehberine](app/README.md) bak.
+Türkçe konuşan ve kontrollü bilgisayar işlemleri yapan Windows masaüstü asistanı.
+
+- [v0.3 Windows indirme paketi](downloads/JARVIS_v0.3_Windows.zip)
+- [Kurulum ve kullanım](app/README.md)
+- [Kaynak kod](app/)
+
+Kurulu v0.2 içinden **Ayarlar → Güncellemeyi denetle → Yeni sürümü yükle** yoluyla güncelleyebilirsin.

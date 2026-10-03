@@ -1,27 +1,46 @@
 """Desktop bridge for the bundled web interface. Nothing is served publicly."""
 import os
+import io
+import json
 import queue
 import threading
+import time
 import webbrowser
 from pathlib import Path
+from uuid import uuid4
 
 from . import __version__
-from .core import Assistant
+from .core import Assistant, normalize
 from .storage import data_dir
 from .voice import Voice
 from .updates import UpdateClient
+from .agent import Agent
+from .computer import describe, perform
 
 
 class DesktopAPI:
     def __init__(self):
         self.events = queue.Queue()
         self.assistant = Assistant()
+        self.agent = Agent()
+        self.agent.key = self.assistant.api_key
+        self.agent.openai_model = self.assistant.model
+        self.config_path = data_dir() / 'settings.json'
+        if self.config_path.is_file():
+            try:
+                config = json.loads(self.config_path.read_text(encoding='utf-8'))
+                self.agent.provider = config.get('provider', 'auto')
+                self.agent.local_model = config.get('local_model', 'qwen3:4b')
+                self.agent.openai_model = config.get('openai_model', self.assistant.model)
+            except (ValueError, OSError):
+                pass
         self.voice = Voice(self.events)
         self.update_client = UpdateClient(data_dir())
         self.speech_permission = False
         self.wake = False
         self.window = None
         self._lock = threading.Lock()
+        self.pending = {}
         self._running = True
         self._timer = threading.Thread(target=self._reminders, daemon=True)
         self._timer.start()
@@ -29,7 +48,9 @@ class DesktopAPI:
     def initial(self):
         return {'version': __version__, 'notes': self.notes(), 'reminders': self.reminders(),
                 'voice_enabled': self.voice.enabled, 'wake': self.wake,
-                'model': self.assistant.model, 'api_configured': bool(self.assistant.api_key),
+                'model': self.agent.openai_model, 'local_model': self.agent.local_model,
+                'provider': self.agent.provider, 'api_configured': bool(self.agent.key),
+                'chat_ready': bool(self.agent.selected_provider()),
                 'update_source': self.update_client.source or ''}
 
     def command(self, text):
@@ -38,13 +59,91 @@ class DesktopAPI:
         if not self._lock.acquire(blocking=False):
             return {'ok': False, 'text': 'Önceki komut işleniyor.'}
         try:
-            result = self.assistant.execute(text).text
+            if self.agent.selected_provider():
+                result = self.agent.ask(text)
+                return self._apply_proposals(result)
+            normalized = normalize(text).rstrip('.!? ')
+            if normalized in ('nasilsin', 'jarvis nasilsin', 'iyi misin', 'jarvis iyi misin'):
+                result = 'İyiyim, teşekkür ederim. Sen nasılsın? Geniş sohbet için Ayarlar’dan OpenAI veya yerel Ollama bağlantısını açabilirsin.'
+            else:
+                result = self.assistant.execute(text).text
+                if result.startswith('Bu komutu tanımadım.'):
+                    result = self.agent.ask(text)['text']
             self.voice.say(result)
             return {'ok': True, 'text': result}
         except Exception:
             return {'ok': False, 'text': 'Komut tamamlanamadı. Tekrar deneyebilirsin.'}
         finally:
             self._lock.release()
+
+    def _apply_proposals(self, result):
+        outcomes, protected = [], []
+        for action in result['actions']:
+            if action['name'] in {'type_text','press_keys','click_screen','write_document'}:
+                protected.append(action)
+            else:
+                try:
+                    outcomes.append(describe(action) + ': ' + perform(action, self.assistant))
+                except Exception:
+                    outcomes.append(describe(action) + ': İşlem tamamlanamadı.')
+        answer = result['text'] or ('İşlem önerdim.' if protected else 'İşlemler tamamlandı.')
+        if outcomes: answer += '\n' + '\n'.join(outcomes)
+        if outcomes:
+            self.agent.history.append({'role':'assistant','content':'Gerçek işlem sonuçları: '+ '\n'.join(outcomes)})
+        response = {'ok': True, 'text': answer}
+        if protected:
+            token = uuid4().hex
+            self.pending.clear()
+            self.pending[token] = (time.monotonic() + 180, protected)
+            response['proposal'] = {'id':token, 'items':[describe(x) for x in protected]}
+        self.voice.say(answer)
+        return response
+
+    def execute_pending(self, token):
+        saved = self.pending.pop(token, None)
+        if not saved or saved[0] < time.monotonic():
+            return {'ok':False,'text':'İşlem onayı süresi doldu.'}
+        outputs=[]
+        for action in saved[1]:
+            try:
+                outputs.append(describe(action) + ': ' + perform(action, self.assistant))
+            except Exception:
+                outputs.append(describe(action) + ': Uygulanamadı.')
+        answer='\n'.join(outputs)
+        self.agent.history.append({'role':'assistant','content':'Onaylanan işlem sonuçları: '+answer})
+        self.voice.say(answer)
+        return {'ok':True,'text':answer}
+
+    def cancel_pending(self, token):
+        self.pending.pop(token, None)
+        return {'ok':True}
+
+    def inspect_screen(self, prompt, accepted):
+        if accepted is not True or not isinstance(prompt,str) or len(prompt)>1000:
+            return {'ok':False,'text':'Ekran analizi iptal edildi.'}
+        if self.agent.selected_provider()!='openai':
+            return {'ok':False,'text':'Ekran analizi için Ayarlar’dan OpenAI bağlantısını seç.'}
+        try:
+            import pyautogui
+            pyautogui.FAILSAFE=True
+            switched=False
+            try:
+                if os.name=='nt':
+                    pyautogui.hotkey('alt','tab')
+                    switched=True
+                    time.sleep(0.35)
+                picture=pyautogui.screenshot()
+                size=picture.size
+            finally:
+                if switched:
+                    pyautogui.hotkey('alt','tab')
+            picture.thumbnail((1280,900))
+            stream=io.BytesIO()
+            picture.convert('RGB').save(stream,format='JPEG',quality=75)
+            result=self.agent.ask(prompt,stream.getvalue(),size)
+            return self._apply_proposals(result)
+        except Exception:
+            return {'ok':False,'text':'Ekran görüntüsü alınamadı. Windows ekran iznini kontrol et.'}
 
     def notes(self):
         return [{'id': i, 'body': body} for i, body in self.assistant.memory.notes()]
@@ -90,15 +189,23 @@ class DesktopAPI:
             self.voice.stop_listening()
         return {'ok': True, 'wake': self.wake}
 
-    def settings(self, key, model):
-        if not isinstance(key, str) or not isinstance(model, str):
+    def settings(self, key, model, provider='auto', local_model='qwen3:4b'):
+        if not isinstance(key, str) or not isinstance(model, str) or not isinstance(local_model,str):
             return {'ok': False}
-        if len(key) > 512 or len(model) > 100:
+        if len(key) > 512 or len(model) > 100 or len(local_model)>100 or provider not in ('auto','openai','ollama'):
             return {'ok': False}
         self.assistant.api_key = key.strip()
         self.assistant.model = model.strip() or 'gpt-4.1-mini'
         self.assistant.history.clear()
-        return {'ok': True, 'api_configured': bool(self.assistant.api_key), 'model': self.assistant.model}
+        self.agent.key = self.assistant.api_key
+        self.agent.openai_model = self.assistant.model
+        self.agent.local_model = local_model.strip() or 'qwen3:4b'
+        self.agent.provider = provider
+        self.agent.history.clear()
+        self.config_path.write_text(json.dumps({'provider':provider,'openai_model':self.agent.openai_model,
+                             'local_model':self.agent.local_model}),encoding='utf-8')
+        return {'ok': True, 'api_configured': bool(self.agent.key), 'model': self.agent.openai_model,
+                'provider':provider}
 
     def events_since_last_poll(self):
         events = []

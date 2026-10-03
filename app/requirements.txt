@@ -3,3 +3,4 @@ SpeechRecognition[audio]==3.15.2
 pyttsx3==2.99
 edge-tts==7.2.7
 pywebview==6.2.1
+PyAutoGUI==0.9.54

@@ -35,7 +35,7 @@ def apply(archive, project, stage):
         allowed = {'main.py', 'requirements.txt', 'KURULUM.bat', 'BASLAT.bat',
                    'OTOMATIK_BASLAT.ps1', 'KISAYOL.ps1', 'README.md', 'TEST_RAPORU.md',
                    'YAYIN_REHBERI.md', 'tests/test_core.py', 'tests/test_voice.py',
-                   'tests/test_updates.py', 'update_source.txt'}
+                   'tests/test_updates.py', 'tests/test_agent.py', 'update_source.txt'}
         files = []
         for entry in zipped.infolist():
             if entry.is_dir(): continue

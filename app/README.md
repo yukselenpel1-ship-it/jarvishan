@@ -1,52 +1,58 @@
-# JARVIS v0.2 — masaüstü sürümü
+# JARVIS v0.3 — sohbet ve bilgisayar kontrolü
 
-Türkçe kişisel asistan. Modern masaüstü penceresi, konuşma alanı, hızlı komutlar,
-yerel notlar, hatırlatmalar, isteğe bağlı mikrofon ve AI sohbeti.
+JARVIS artık bir konuşma motoruna bağlandığında doğal Türkçe sohbet eder ve
+izin verilen bilgisayar işlemlerini konuşma içinden yönetir. Ana ekranda
+mor/pembe parçacık küresi teması, konuşma alanı, hızlı komutlar, notlar,
+hatırlatmalar ve ayarlar bulunur.
 
-## İlk kurulum ve eski sürümden geçiş
+## v0.2'den güncelleme
 
-Windows 10/11, WebView2 Runtime ve Python 3.11 ya da 3.12 gerekir. Python: https://www.python.org/downloads/ .
-ZIP'i bilgisayarda kalıcı bir klasöre çıkar. `KURULUM.bat` dosyasını bir kez aç.
-Bağımlılıklar ve masaüstü kısayolu kurulur. Sonraki açılışlarda masaüstündeki
-**JARVIS** kısayolunu kullan. Hata çıktısını görmek için `BASLAT.bat` kullanılabilir.
+JARVIS v0.2'yi aç → Ayarlar → Güncellemeyi denetle → Yeni sürümü yükle.
+Bağlı `update_source.txt` dosyası varsa v0.3 görünür. Uygulama kapanır,
+ZIP'in SHA-256 özetini doğrular, kaynakları değiştirir, yeni bağımlılıkları
+kurar ve yeniden açılır. Notlar `%LOCALAPPDATA%\Jarvis\memory.sqlite3`
+içinde kalır. Eski v0.2 kurulumunda güncelleme kaynağı görünmüyorsa
+https://raw.githubusercontent.com/yukselenpel1-ship-it/jarvishan/main/app/update_source.txt
+dosyasını `JARVIS_v0.2` klasörüne koyup uygulamayı yeniden aç.
 
-v0.1 kullandıysan yeni paketi eski `JARVIS_v0.1` klasörünün bulunduğu üst klasöre
-çıkar. Yeni `JARVIS_v0.2` klasöründe `KURULUM.bat` çalıştır. Notlar
-`%LOCALAPPDATA%\Jarvis\memory.sqlite3` içinde tutulduğu için yeni sürümde görünür.
-Yeni sürüm çalıştıktan sonra eski proje klasörünü silebilirsin; veri klasörüne dokunma.
-Pencere hiç açılmazsa `BASLAT.bat` çıktısını kontrol et; WebView2 gerekiyorsa
-Microsoft'un https://developer.microsoft.com/microsoft-edge/webview2/ adresinden kur.
+İlk kurulum: ZIP'i sabit bir klasöre çıkar, Windows 10/11 ve Python 3.11/3.12
+üzerinde `KURULUM.bat` çalıştır. Sonrasında masaüstündeki JARVIS kısayoluyla aç.
+WebView2 Runtime gerekir: https://developer.microsoft.com/microsoft-edge/webview2/ .
 
-## Kullanım
+## Sohbet bağlantısı
 
-- Ana merkezde yaz veya mikrofona bas: `saat kaç`, `Chrome aç`, `SquadCraft aç`,
-  `YouTube ara KPSS`, `dosya bul CV`, `sistem bilgisi`, `ses aç`.
-- Hafıza bölümünde notları ekle, görüntüle ve sil. `not al ...` komutu da çalışır.
-- Hatırlatmalar bölümünde süre ve metin gir. Bekleyenleri gör ve iptal et.
-- Ayarlardan sesi, sürekli “Jarvis” modunu ve isteğe bağlı AI anahtarını yönet.
-- Türkçe yerel ses varsa kullanılır; yoksa yanıt metni çevrimiçi Türkçe ses
-  servisine gönderilir. Mikrofon konuşması Google tanıma servisine gönderilir;
-  dinleme başlamadan açıklama ve onay gösterilir.
-- AI sohbeti OpenAI API anahtarı gerektirir ve ayrı ücretlendirilir. Anahtar
-  bellekte tutulur; notlar AI'ye otomatik gönderilmez.
+Ayarlar'da iki seçenek bulunur:
 
-## Güncellemeler
+- **OpenAI API:** Kendi API anahtarını gir. `gpt-4.1-mini` varsayılanı.
+  Anahtar yalnızca bu oturum belleğinde tutulur; ChatGPT aboneliğinden ayrı
+  API kullanımı ücretlidir. Ekran analizi de bu bağlantıyı gerektirir.
+- **Yerel Ollama:** https://ollama.com/download/windows adresinden kur. PowerShell'de
+  `ollama pull qwen3:4b` çalıştır (yaklaşık 2,5 GB indirme). Ollama açıkken
+  Ayarlar'da Yerel Ollama seç. Konuşma bilgisayarında işlenir; ekran analizi
+  bu ilk sürümde yerel modelde sunulmaz.
 
-v0.2 içinde güncelleme denetleme ve kurma akışı hazırdır. Sabit HTTPS yayın
-adresi `update_source.txt` dosyasında JARVISHAN deposuna bağlanmıştır. Yeni sürüm
-yayımlandığında uygulama sürümü ve SHA-256 özetini doğrular, kapanır, eski
-kaynakları yedekleyerek günceller ve tekrar açılır. Not veritabanına dokunulmaz.
-v0.1'den v0.2'ye geçiş için bir kez ZIP gerekir. Sonraki sürüm yayın akışı
-`YAYIN_REHBERI.md` dosyasındadır. Güncellemenin Windows'ta canlı testi gerekir.
+Sohbet bağlantısı yoksa yalnızca yerel komutlar ve birkaç temel selamlama
+çalışır. `nasılsın` gibi sohbet sorularının kapsamlı yanıtı için model gerekir.
 
-`main.py` → `jarvis/desktop.py` → `jarvis/web/index.html` görsel arayüz.
-Komut motoru `jarvis/core.py`, ses `jarvis/voice.py`, kalıcı veri
-`jarvis/storage.py`, güncelleme `jarvis/updates.py` ve `jarvis/update_worker.py`.
-Kaynak kod ayrı bir Windows EXE değildir; Python kurulumu bir kez gerekir.
+## Bilgisayar işlemleri
 
-Geliştirici kontrolü:
+Model şu araçları önerebilir: Chrome/Not Defteri/Hesap Makinesi/Gezgin açma,
+Google araması, sistem bilgileri, dosya adı arama, not, hatırlatma, yeni TXT
+belgesi oluşturma, etkin pencereye tek satır metin yazma, izinli tuşlara basma
+ve ekrandaki konuma tıklama. Yazma, tıklama, tuş ve dosya oluşturma her seferinde
+uygulamada işlem özetiyle onaylanır. Sol üst ekran köşesine fareyi götürmek
+PyAutoGUI acil durdurma hareketidir. Keyfi program, terminal komutu veya
+silme komutu çalıştırılmaz. Uygulama adına bağlı açma listesi sınırlıdır.
 
-```bash
-python -m unittest discover -s tests -v
-python -m compileall -q jarvis main.py
-```
+Ekran görüntüsü için konuşma kutusundaki ▣ simgesine tıkla. Hedef pencereyi
+önce JARVIS'in arkasında açık bırak. Onay verirsen bir önceki pencerenin
+görüntüsü küçültülüp OpenAI'ye gönderilir. Önerilen tıklamayı ayrıca onaylarsın.
+Mikrofon tanıma Google servisini, çevrimiçi Türkçe TTS Microsoft Edge servisini
+kullanır. Bunlar için uygulama içinde açıklama bulunur.
+
+## Geliştirme
+
+Kaynak kod: https://github.com/yukselenpel1-ship-it/jarvishan/tree/main/app .
+`python -m unittest discover -s tests -v` ve
+`python -m compileall -q jarvis main.py` ile doğrula. Windows üzerinde yeni
+ses, ekran ve canlı güncelleme akışını cihazda sınamak gerekir.
