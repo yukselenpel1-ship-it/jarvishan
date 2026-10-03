@@ -1,0 +1,7 @@
+{
+  "name": "jarvis-vercel-root",
+  "private": true,
+  "type": "module",
+  "scripts": {"build": "node build.mjs", "test": "cd web && npm test"},
+  "engines": {"node": ">=20"}
+}

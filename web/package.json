@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "node build.mjs",
     "dev": "node --env-file=.env.local dev.mjs",
     "test": "node tests/api.test.js"
   },
