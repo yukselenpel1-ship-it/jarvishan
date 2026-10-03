@@ -1,6 +1,6 @@
 {
-  "version": "0.5.0",
-  "url": "https://raw.githubusercontent.com/yukselenpel1-ship-it/jarvishan/main/downloads/JARVIS_v0.5_Windows.zip",
-  "sha256": "9bff22db6414a6591a280c859027b36fcb1f4a7d6779d827faadb41738e00e74",
-  "notes": "Yanıt ve işlem güvenilirliği, model bağlantı durumu, JARVIS ses düzeyi."
+  "version": "0.6.0",
+  "url": "https://raw.githubusercontent.com/yukselenpel1-ship-it/jarvishan/main/downloads/JARVIS_v0.6_Windows.zip",
+  "sha256": "0d26213f026b7a96dca5bec740e8ee2bade61ad1d93163cdd6c706c7d052b055",
+  "notes": "Seçilen ElevenLabs ses kimliği, API anahtarı ayarı ve ses düzeyi desteği."
 }

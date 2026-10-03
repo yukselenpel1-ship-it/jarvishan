@@ -5,6 +5,12 @@ import asyncio
 import ctypes
 import os
 import tempfile
+import json
+import urllib.request
+import urllib.error
+
+
+JARVIS_VOICE_ID = 'IKne3meq5aSn9XLyUdCD'
 
 
 def turkish_voice(voices):
@@ -38,6 +44,8 @@ class Voice:
         self.speaking = threading.Event()
         self.enabled = True
         self.volume = 100
+        self.elevenlabs_key = os.environ.get('ELEVENLABS_API_KEY', '').strip()
+        self.voice_id = JARVIS_VOICE_ID
         self.stop = threading.Event()
         self.closed = threading.Event()
         self.jobs = queue.Queue()
@@ -74,6 +82,12 @@ class Voice:
             try:
                 if self.volume == 0:
                     continue
+                if self.elevenlabs_key:
+                    try:
+                        self._speak_elevenlabs(text)
+                        continue
+                    except (OSError, ValueError, urllib.error.HTTPError):
+                        self.events.put(('notice', 'Seçilen ElevenLabs sesi çalışmadı; varsayılan Türkçe sese geçildi. API anahtarını ve kullanım hakkını kontrol et.'))
                 if engine:
                     engine.setProperty('volume', self.volume / 100)
                     engine.say(text)
@@ -97,6 +111,26 @@ class Voice:
                 os.unlink(path)
             except OSError:
                 pass
+
+    def _speak_elevenlabs(self, text):
+        """Send only the spoken answer to the selected ElevenLabs voice."""
+        url = f'https://api.elevenlabs.io/v1/text-to-speech/{self.voice_id}?output_format=mp3_44100_128'
+        request = urllib.request.Request(url, data=json.dumps({
+            'text':text,'model_id':'eleven_multilingual_v2'}).encode('utf-8'),
+            headers={'xi-api-key':self.elevenlabs_key,'Content-Type':'application/json',
+                     'Accept':'audio/mpeg'}, method='POST')
+        with urllib.request.urlopen(request,timeout=25) as response:
+            audio = response.read(6 * 1024 * 1024 + 1)
+        if not audio or len(audio)>6*1024*1024:
+            raise ValueError('Ses dosyası boş veya çok büyük')
+        fd,path=tempfile.mkstemp(suffix='.mp3',prefix='jarvis-eleven-')
+        try:
+            with os.fdopen(fd,'wb') as handle:
+                handle.write(audio)
+            play_mp3_windows(path,self.volume)
+        finally:
+            try: os.unlink(path)
+            except OSError: pass
 
     def listen(self, continuous=False):
         if self.listener and self.listener.is_alive():

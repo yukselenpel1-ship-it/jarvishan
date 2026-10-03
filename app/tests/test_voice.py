@@ -1,6 +1,7 @@
 import queue
 import threading
 import types
+import json
 import unittest
 from unittest.mock import patch
 
@@ -51,6 +52,24 @@ class VoiceTests(unittest.TestCase):
                 self.assertIn(0.25,volumes)
             finally:
                 voice.close()
+
+    def test_selected_elevenlabs_voice_and_volume(self):
+        voice=Voice.__new__(Voice)
+        voice.elevenlabs_key='test-key'
+        voice.voice_id='IKne3meq5aSn9XLyUdCD'
+        voice.volume=35
+        class Audio:
+            def __enter__(self): return self
+            def __exit__(self, *args): pass
+            def read(self, size): return b'ID3sample'
+        with patch('jarvis.voice.urllib.request.urlopen',return_value=Audio()) as send, \
+             patch('jarvis.voice.play_mp3_windows') as play:
+            voice._speak_elevenlabs('Merhaba Oğuzhan')
+        request=send.call_args.args[0]
+        self.assertIn('/IKne3meq5aSn9XLyUdCD?',request.full_url)
+        self.assertEqual(json.loads(request.data)['text'],'Merhaba Oğuzhan')
+        self.assertEqual(request.headers['Xi-api-key'],'test-key')
+        self.assertEqual(play.call_args.args[1],35)
 
 
 if __name__ == '__main__':

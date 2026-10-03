@@ -13,7 +13,7 @@ from uuid import uuid4
 from . import __version__
 from .core import Assistant, normalize
 from .storage import data_dir
-from .voice import Voice
+from .voice import Voice, JARVIS_VOICE_ID
 from .updates import UpdateClient
 from .agent import Agent
 from .computer import describe, perform
@@ -85,6 +85,8 @@ class DesktopAPI:
         return {'version': __version__, 'notes': self.notes(), 'reminders': self.reminders(),
                 'voice_enabled': self.voice.enabled, 'wake': self.wake,
                 'voice_volume': self.voice.volume,
+                'elevenlabs_configured': bool(self.voice.elevenlabs_key),
+                'voice_id': JARVIS_VOICE_ID,
                 'model': self.agent.openai_model, 'local_model': self.agent.local_model,
                 'provider': self.agent.provider, 'api_configured': bool(self.agent.key),
                 'chat_ready': bool(self.agent.selected_provider()),
@@ -216,6 +218,16 @@ class DesktopAPI:
         self.voice.volume = value
         self._save_settings()
         return {'ok': True, 'volume': value}
+
+    def set_elevenlabs_key(self, key):
+        if not isinstance(key, str) or not 8 <= len(key.strip()) <= 256:
+            return {'ok': False, 'message': 'Geçerli ElevenLabs API anahtarını gir.'}
+        self.voice.elevenlabs_key = key.strip()
+        return {'ok': True, 'message': 'Seçilen JARVIS sesi bu oturum için etkin.'}
+
+    def clear_elevenlabs_key(self):
+        self.voice.elevenlabs_key = ''
+        return {'ok': True, 'message': 'Varsayılan Türkçe sese dönüldü.'}
 
     def _save_settings(self):
         self.config_path.write_text(json.dumps({'provider':self.agent.provider,

@@ -1,4 +1,4 @@
-# JARVIS v0.5 — daha güvenilir sohbet, işlemler ve ses düzeyi
+# JARVIS v0.6 — seçilen ElevenLabs sesi
 
 JARVIS artık bir konuşma motoruna bağlandığında doğal Türkçe sohbet eder ve
 izin verilen bilgisayar işlemlerini konuşma içinden yönetir. Ana ekranda
@@ -8,7 +8,7 @@ hatırlatmalar ve ayarlar bulunur.
 ## v0.2/v0.3'ten güncelleme
 
 JARVIS v0.2'yi aç → Ayarlar → Güncellemeyi denetle → Yeni sürümü yükle.
-Bağlı `update_source.txt` dosyası varsa v0.5 görünür. Uygulama kapanır,
+Bağlı `update_source.txt` dosyası varsa v0.6 görünür. Uygulama kapanır,
 ZIP'in SHA-256 özetini doğrular, kaynakları değiştirir, yeni bağımlılıkları
 kurar ve yeniden açılır. Notlar `%LOCALAPPDATA%\Jarvis\memory.sqlite3`
 içinde kalır. Eski v0.2 kurulumunda güncelleme kaynağı görünmüyorsa
@@ -66,3 +66,7 @@ Arayüz düzeni kullanıcı tarafından gösterilen [alpunlu12-commits/jarvis](h
 Yerel komutlar (örneğin “Chrome’u aç”, “not al ...”, “10 dakika sonra hatırlat ...”) AI bağlantısını beklemeden çalışır. Diğer konuşmalar için Ayarlar’da OpenAI anahtarı veya çalışan Ollama modeli gerekir. Bağlantı yoksa ekranda MODEL OFFLINE görünür. Model yanıtı uzarsa JARVIS hata metni döndürür; yeni mesajlar sıraya alınır.
 
 Ayarlar → JARVIS ses düzeyi kaydırıcısı 0–100 arasındadır. 0 sessizdir; değişiklikler bilgisayardaki ayarlara kaydedilir. Windows genel ses düzeyini değiştirmez.
+
+## ElevenLabs sesi
+
+Ayarlar → JARVIS konuşma sesi bölümüne kendi ElevenLabs API anahtarını gir ve **Seçilen sesi kullan** düğmesine bas. Kullanılan ses kimliği `IKne3meq5aSn9XLyUdCD`, model `eleven_multilingual_v2` ve çıkış MP3’tür. Anahtar uygulamanın bu oturum belleğindedir ve dosyaya yazılmaz. `ELEVENLABS_API_KEY` Windows ortam değişkeni varsa açılışta da kullanılabilir. Sesli yanıt ElevenLabs servisine gönderilir; API bağlantısı çalışmazsa önceki Türkçe sese dönülür. Ses düzeyi kaydırıcısı bu seste de çalışır.
