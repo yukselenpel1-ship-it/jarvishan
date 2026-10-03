@@ -1,6 +1,8 @@
 import json
 import threading
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from jarvis.agent import Agent
@@ -56,6 +58,28 @@ class AgentTests(unittest.TestCase):
             api.execute_pending(token)
             perform.assert_called_once()
             self.assertFalse(api.execute_pending(token)['ok'])
+
+    def test_known_task_works_without_waiting_for_model(self):
+        api=DesktopAPI.__new__(DesktopAPI)
+        api.agent=Mock(); api.agent.selected_provider.return_value='openai'
+        api.assistant=Mock(); api.assistant.execute.return_value=Mock(text='Not kaydedildi.')
+        api.voice=Mock(); api._lock=threading.Lock()
+        result=api.command('not al Toplantı 10.00')
+        self.assertEqual(result['text'],'Not kaydedildi.')
+        api.agent.ask.assert_not_called()
+        api.command('Chrome’u aç')
+        api.assistant.execute.assert_called_with('chrome aç')
+
+    def test_voice_volume_persists_without_erasing_provider(self):
+        api=DesktopAPI.__new__(DesktopAPI)
+        api.agent=Mock(provider='ollama',openai_model='gpt-4.1-mini',local_model='qwen3:4b')
+        api.voice=Mock(volume=100)
+        with tempfile.TemporaryDirectory() as folder:
+            api.config_path=Path(folder)/'settings.json'
+            self.assertEqual(api.set_voice_volume(28)['volume'],28)
+            self.assertEqual(json.loads(api.config_path.read_text())['voice_volume'],28)
+            self.assertEqual(json.loads(api.config_path.read_text())['provider'],'ollama')
+            self.assertFalse(api.set_voice_volume(120)['ok'])
 
 
 if __name__=='__main__': unittest.main()

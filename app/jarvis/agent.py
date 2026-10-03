@@ -43,16 +43,17 @@ class Agent:
 
     def selected_provider(self):
         if self.provider=='openai': return 'openai' if self.key else None
-        if self.provider=='ollama': return 'ollama' if self._ollama_running() else None
+        if self.provider=='ollama': return 'ollama' if self._ollama_running(self.local_model) else None
         if self.key: return 'openai'
-        return 'ollama' if self._ollama_running() else None
+        return 'ollama' if self._ollama_running(self.local_model) else None
 
     @staticmethod
-    def _ollama_running():
+    def _ollama_running(model):
         try:
-            with urllib.request.urlopen('http://127.0.0.1:11434/api/tags',timeout=0.5) as response:
-                return response.status==200
-        except OSError:
+            with urllib.request.urlopen('http://127.0.0.1:11434/api/tags',timeout=1) as response:
+                models=json.load(response).get('models',[])
+                return any(item.get('name')==model or item.get('model')==model for item in models)
+        except (OSError, ValueError, TypeError):
             return False
 
     def ask(self, text, image=None, screen_size=None):
@@ -75,7 +76,7 @@ class Agent:
         if provider=='openai': headers['Authorization']='Bearer '+self.key
         request=urllib.request.Request(url,data=json.dumps(payload).encode(),headers=headers)
         try:
-            with urllib.request.urlopen(request,timeout=120 if provider=='ollama' else 45) as response:
+            with urllib.request.urlopen(request,timeout=45 if provider=='ollama' else 30) as response:
                 data=json.load(response)
             message=data['choices'][0]['message'] if provider=='openai' else data['message']
             actions=[]
@@ -83,7 +84,10 @@ class Agent:
                 function=call.get('function',{})
                 args=function.get('arguments',{})
                 if isinstance(args,str): args=json.loads(args)
-                action=valid_action(function.get('name'),args)
+                try:
+                    action=valid_action(function.get('name'),args)
+                except (ValueError, TypeError):
+                    continue
                 if action['name']=='click_screen' and not image:
                     continue
                 actions.append(action)
@@ -96,6 +100,8 @@ class Agent:
         except urllib.error.HTTPError as exc:
             detail={401:'API anahtarı geçersiz.',404:'Model bulunamadı; Ayarlar’daki model adını kontrol et.',
                     429:'API kotası veya hız sınırına ulaşıldı.'}.get(exc.code,f'AI servisi HTTP {exc.code} hatası verdi.')
+        except TimeoutError:
+            detail='Sohbet modeli zamanında yanıt vermedi. Ollama açıksa daha küçük bir model seç veya tekrar dene.'
         except (OSError,ValueError,KeyError,IndexError,TypeError):
             detail='Sohbet motoruna erişilemedi. Bağlantıyı ve model ayarını kontrol et.'
         return {'text':detail,'actions':[]}

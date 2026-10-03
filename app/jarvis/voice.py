@@ -16,7 +16,7 @@ def turkish_voice(voices):
     return None
 
 
-def play_mp3_windows(path):
+def play_mp3_windows(path, volume=100):
     """Use Windows MCI so online Turkish speech needs no second audio package."""
     mci = ctypes.windll.winmm.mciSendStringW
     alias = 'jarvis_voice'
@@ -26,6 +26,7 @@ def play_mp3_windows(path):
             raise OSError(f'Windows audio error {code}')
     send(f'open "{path}" type mpegvideo alias {alias}')
     try:
+        send(f'setaudio {alias} volume to {max(0, min(100, int(volume))) * 10}')
         send(f'play {alias} wait')
     finally:
         mci(f'close {alias}', None, 0, None)
@@ -36,6 +37,7 @@ class Voice:
         self.events = events
         self.speaking = threading.Event()
         self.enabled = True
+        self.volume = 100
         self.stop = threading.Event()
         self.closed = threading.Event()
         self.jobs = queue.Queue()
@@ -70,7 +72,10 @@ class Voice:
                 continue
             self.speaking.set()
             try:
+                if self.volume == 0:
+                    continue
                 if engine:
+                    engine.setProperty('volume', self.volume / 100)
                     engine.say(text)
                     engine.runAndWait()
                 else:
@@ -80,14 +85,13 @@ class Voice:
             finally:
                 self.speaking.clear()
 
-    @staticmethod
-    def _speak_online(text):
+    def _speak_online(self, text):
         import edge_tts
         fd, path = tempfile.mkstemp(suffix='.mp3', prefix='jarvis-')
         os.close(fd)
         try:
             asyncio.run(edge_tts.Communicate(text, 'tr-TR-AhmetNeural').save(path))
-            play_mp3_windows(path)
+            play_mp3_windows(path, self.volume)
         finally:
             try:
                 os.unlink(path)

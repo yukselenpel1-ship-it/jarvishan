@@ -1,4 +1,4 @@
-# JARVIS v0.4 doğrulama raporu
+# JARVIS v0.5 doğrulama raporu
 
 03.10.2026 — Linux/Python 3.12.14 ortamı. 24 otomatik test PASS.
 AI sohbet yanıtı ve model araç çağrısı mock yanıtlarla sınandı. Modelin
@@ -8,7 +8,7 @@ geri alma testleri geçti. Python kaynakları derlendi; HTML ayrıştırıldı v
 JavaScript sözdizimi Node ile doğrulandı.
 
 Yeni WebView2 arayüzü, gerçek OpenAI/Ollama bağlantısı, Windows ekran/tuş
-kontrolü, Türkçe ses ve uygulama içi v0.3→v0.4 güncellemesi bu Linux ortamında
+kontrolü, Türkçe ses ve uygulama içi v0.3→v0.5 güncellemesi bu Linux ortamında
 uçtan uca test edilemedi. İlk Windows kurulumunda bunların cihazda kontrolü
 gerekir. Kullanıcının önceki ekran görüntüsü yalnızca v0.1 arayüzünün açılıp
 `saat kaç` komutuna yanıt verdiğini doğrular.

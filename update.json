@@ -1,6 +1,6 @@
 {
-  "version": "0.4.0",
-  "url": "https://raw.githubusercontent.com/yukselenpel1-ship-it/jarvishan/main/downloads/JARVIS_v0.4_Windows.zip",
-  "sha256": "fc6a7378c78e506d6f987016b3955d471a2e3c85f1f0fa3a53a97395487eb033",
-  "notes": "Siyah, turkuaz ve turuncu HUD görünümü; animasyonlu merkez çekirdeği ve üç panelli sohbet."
+  "version": "0.5.0",
+  "url": "https://raw.githubusercontent.com/yukselenpel1-ship-it/jarvishan/main/downloads/JARVIS_v0.5_Windows.zip",
+  "sha256": "9bff22db6414a6591a280c859027b36fcb1f4a7d6779d827faadb41738e00e74",
+  "notes": "Yanıt ve işlem güvenilirliği, model bağlantı durumu, JARVIS ses düzeyi."
 }

@@ -33,6 +33,25 @@ class VoiceTests(unittest.TestCase):
         self.assertIs(turkish_voice([english, turkish]), turkish)
         self.assertIsNone(turkish_voice([english]))
 
+    def test_local_speech_uses_selected_volume(self):
+        volumes=[]
+        completed=threading.Event()
+        class Engine:
+            def getProperty(self, name): return [types.SimpleNamespace(id='tr-TR-Test',name='Turkish',languages=[])]
+            def setProperty(self, key, value):
+                if key=='volume': volumes.append(value)
+            def say(self, text): pass
+            def runAndWait(self): completed.set()
+        with patch.dict('sys.modules', {'pyttsx3':types.SimpleNamespace(init=lambda:Engine())}):
+            voice=Voice(queue.Queue())
+            try:
+                voice.volume=25
+                voice.say('Test')
+                self.assertTrue(completed.wait(2))
+                self.assertIn(0.25,volumes)
+            finally:
+                voice.close()
+
 
 if __name__ == '__main__':
     unittest.main()

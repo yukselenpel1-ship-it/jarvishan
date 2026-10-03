@@ -1,4 +1,4 @@
-# JARVIS v0.4 — HUD arayüzü ve bilgisayar kontrolü
+# JARVIS v0.5 — daha güvenilir sohbet, işlemler ve ses düzeyi
 
 JARVIS artık bir konuşma motoruna bağlandığında doğal Türkçe sohbet eder ve
 izin verilen bilgisayar işlemlerini konuşma içinden yönetir. Ana ekranda
@@ -8,7 +8,7 @@ hatırlatmalar ve ayarlar bulunur.
 ## v0.2/v0.3'ten güncelleme
 
 JARVIS v0.2'yi aç → Ayarlar → Güncellemeyi denetle → Yeni sürümü yükle.
-Bağlı `update_source.txt` dosyası varsa v0.4 görünür. Uygulama kapanır,
+Bağlı `update_source.txt` dosyası varsa v0.5 görünür. Uygulama kapanır,
 ZIP'in SHA-256 özetini doğrular, kaynakları değiştirir, yeni bağımlılıkları
 kurar ve yeniden açılır. Notlar `%LOCALAPPDATA%\Jarvis\memory.sqlite3`
 içinde kalır. Eski v0.2 kurulumunda güncelleme kaynağı görünmüyorsa
@@ -60,3 +60,9 @@ ses, ekran ve canlı güncelleme akışını cihazda sınamak gerekir.
 ## Görsel referans
 
 Arayüz düzeni kullanıcı tarafından gösterilen [alpunlu12-commits/jarvis](https://github.com/alpunlu12-commits/jarvis) projesinin siyah, turkuaz ve turuncu HUD estetiği esas alınarak bağımsız HTML/CSS/canvas koduyla oluşturuldu. Referans deponun kodu veya varlıkları kullanılmadı.
+
+## Yanıt ve ses ayarları
+
+Yerel komutlar (örneğin “Chrome’u aç”, “not al ...”, “10 dakika sonra hatırlat ...”) AI bağlantısını beklemeden çalışır. Diğer konuşmalar için Ayarlar’da OpenAI anahtarı veya çalışan Ollama modeli gerekir. Bağlantı yoksa ekranda MODEL OFFLINE görünür. Model yanıtı uzarsa JARVIS hata metni döndürür; yeni mesajlar sıraya alınır.
+
+Ayarlar → JARVIS ses düzeyi kaydırıcısı 0–100 arasındadır. 0 sessizdir; değişiklikler bilgisayardaki ayarlara kaydedilir. Windows genel ses düzeyini değiştirmez.

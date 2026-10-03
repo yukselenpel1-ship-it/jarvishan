@@ -3,6 +3,7 @@ import os
 import io
 import json
 import queue
+import re
 import threading
 import time
 import webbrowser
@@ -18,6 +19,37 @@ from .agent import Agent
 from .computer import describe, perform
 
 
+def local_command(text):
+    """Reliable built-in tasks should not wait for the network or a model."""
+    cmd = normalize(re.sub(r'^jarvis[\s,:]*', '', text.strip(), flags=re.I)).rstrip('.!? ')
+    exact = {'yardim','komutlar','ne yapabilirsin','merhaba','selam','saat kac','saat',
+             'tarih','bugun hangi gun','notlarim','hafiza','notlari goster',
+             'sistem bilgisi','bilgisayar durumu','ram','cpu','ses ac','sesi ac',
+             'ses azalt','ses kis','sesi kapat','sessiz'}
+    if cmd in exact: return True
+    if re.fullmatch(r'not sil \d+|\d+ dakika sonra hatirlat .+',cmd): return True
+    if any(cmd.startswith(x) for x in ('not al ','hatirla ','dosya bul ','youtube ara ','google ara ')): return True
+    return any(cmd in (f'{name} ac', f'{name}i ac', f'{name} acsana')
+               for name in ('squadcraft','youtube','google','not defteri','hesap makinesi','gezgin','chrome'))
+
+
+def common_app_command(text):
+    cmd = normalize(re.sub(r'^jarvis[\s,:]*', '', text.strip(), flags=re.I)).replace('’', "'").rstrip('.!? ')
+    aliases = {
+        'chrome': ('chrome', "chrome'u"),
+        'youtube': ('youtube', "youtube'u"),
+        'google': ('google', "google'i", "google'u"),
+        'squadcraft': ('squadcraft', "squadcraft'i"),
+        'not defteri': ('not defteri', 'not defterini'),
+        'hesap makinesi': ('hesap makinesi', 'hesap makinesini'),
+        'gezgin': ('gezgin', 'gezgini'),
+    }
+    for name, forms in aliases.items():
+        if cmd in (form + ' ac' for form in forms):
+            return name + ' aç'
+    return None
+
+
 class DesktopAPI:
     def __init__(self):
         self.events = queue.Queue()
@@ -26,15 +58,19 @@ class DesktopAPI:
         self.agent.key = self.assistant.api_key
         self.agent.openai_model = self.assistant.model
         self.config_path = data_dir() / 'settings.json'
+        config = {}
         if self.config_path.is_file():
             try:
                 config = json.loads(self.config_path.read_text(encoding='utf-8'))
+                if not isinstance(config, dict): config = {}
                 self.agent.provider = config.get('provider', 'auto')
                 self.agent.local_model = config.get('local_model', 'qwen3:4b')
                 self.agent.openai_model = config.get('openai_model', self.assistant.model)
             except (ValueError, OSError):
                 pass
         self.voice = Voice(self.events)
+        value = config.get('voice_volume', 100)
+        self.voice.volume = value if type(value) is int and 0 <= value <= 100 else 100
         self.update_client = UpdateClient(data_dir())
         self.speech_permission = False
         self.wake = False
@@ -48,6 +84,7 @@ class DesktopAPI:
     def initial(self):
         return {'version': __version__, 'notes': self.notes(), 'reminders': self.reminders(),
                 'voice_enabled': self.voice.enabled, 'wake': self.wake,
+                'voice_volume': self.voice.volume,
                 'model': self.agent.openai_model, 'local_model': self.agent.local_model,
                 'provider': self.agent.provider, 'api_configured': bool(self.agent.key),
                 'chat_ready': bool(self.agent.selected_provider()),
@@ -59,6 +96,11 @@ class DesktopAPI:
         if not self._lock.acquire(blocking=False):
             return {'ok': False, 'text': 'Önceki komut işleniyor.'}
         try:
+            common = common_app_command(text)
+            if common or local_command(text):
+                result = self.assistant.execute(common or text).text
+                self.voice.say(result)
+                return {'ok': True, 'text': result}
             if self.agent.selected_provider():
                 result = self.agent.ask(text)
                 return self._apply_proposals(result)
@@ -168,6 +210,18 @@ class DesktopAPI:
         self.voice.enabled = enabled is True
         return {'enabled': self.voice.enabled}
 
+    def set_voice_volume(self, value):
+        if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 100:
+            return {'ok': False, 'volume': self.voice.volume}
+        self.voice.volume = value
+        self._save_settings()
+        return {'ok': True, 'volume': value}
+
+    def _save_settings(self):
+        self.config_path.write_text(json.dumps({'provider':self.agent.provider,
+            'openai_model':self.agent.openai_model,'local_model':self.agent.local_model,
+            'voice_volume':self.voice.volume}),encoding='utf-8')
+
     def listen(self, accepted):
         if accepted is not True:
             return {'ok': False}
@@ -194,7 +248,7 @@ class DesktopAPI:
             return {'ok': False}
         if len(key) > 512 or len(model) > 100 or len(local_model)>100 or provider not in ('auto','openai','ollama'):
             return {'ok': False}
-        self.assistant.api_key = key.strip()
+        self.assistant.api_key = key.strip() or self.assistant.api_key
         self.assistant.model = model.strip() or 'gpt-4.1-mini'
         self.assistant.history.clear()
         self.agent.key = self.assistant.api_key
@@ -202,10 +256,10 @@ class DesktopAPI:
         self.agent.local_model = local_model.strip() or 'qwen3:4b'
         self.agent.provider = provider
         self.agent.history.clear()
-        self.config_path.write_text(json.dumps({'provider':provider,'openai_model':self.agent.openai_model,
-                             'local_model':self.agent.local_model}),encoding='utf-8')
+        self._save_settings()
+        selected = self.agent.selected_provider()
         return {'ok': True, 'api_configured': bool(self.agent.key), 'model': self.agent.openai_model,
-                'provider':provider}
+                'provider':provider, 'selected_provider':selected, 'chat_ready':bool(selected)}
 
     def events_since_last_poll(self):
         events = []
