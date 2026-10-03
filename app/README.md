@@ -1,14 +1,14 @@
-# JARVIS v0.3 — sohbet ve bilgisayar kontrolü
+# JARVIS v0.4 — HUD arayüzü ve bilgisayar kontrolü
 
 JARVIS artık bir konuşma motoruna bağlandığında doğal Türkçe sohbet eder ve
 izin verilen bilgisayar işlemlerini konuşma içinden yönetir. Ana ekranda
-mor/pembe parçacık küresi teması, konuşma alanı, hızlı komutlar, notlar,
+turkuaz/turuncu, hareketli HUD küresi teması, konuşma alanı, hızlı komutlar, notlar,
 hatırlatmalar ve ayarlar bulunur.
 
-## v0.2'den güncelleme
+## v0.2/v0.3'ten güncelleme
 
 JARVIS v0.2'yi aç → Ayarlar → Güncellemeyi denetle → Yeni sürümü yükle.
-Bağlı `update_source.txt` dosyası varsa v0.3 görünür. Uygulama kapanır,
+Bağlı `update_source.txt` dosyası varsa v0.4 görünür. Uygulama kapanır,
 ZIP'in SHA-256 özetini doğrular, kaynakları değiştirir, yeni bağımlılıkları
 kurar ve yeniden açılır. Notlar `%LOCALAPPDATA%\Jarvis\memory.sqlite3`
 içinde kalır. Eski v0.2 kurulumunda güncelleme kaynağı görünmüyorsa
@@ -56,3 +56,7 @@ Kaynak kod: https://github.com/yukselenpel1-ship-it/jarvishan/tree/main/app .
 `python -m unittest discover -s tests -v` ve
 `python -m compileall -q jarvis main.py` ile doğrula. Windows üzerinde yeni
 ses, ekran ve canlı güncelleme akışını cihazda sınamak gerekir.
+
+## Görsel referans
+
+Arayüz düzeni kullanıcı tarafından gösterilen [alpunlu12-commits/jarvis](https://github.com/alpunlu12-commits/jarvis) projesinin siyah, turkuaz ve turuncu HUD estetiği esas alınarak bağımsız HTML/CSS/canvas koduyla oluşturuldu. Referans deponun kodu veya varlıkları kullanılmadı.

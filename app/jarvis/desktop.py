@@ -261,9 +261,9 @@ def main():
         raise SystemExit('Yeni arayüz için KURULUM.bat dosyasını tekrar çalıştır.')
     api = DesktopAPI()
     html = Path(__file__).parent / 'web' / 'index.html'
-    window = webview.create_window('JARVIS • Komut Merkezi', str(html), js_api=api,
+    window = webview.create_window('JARVIS · Windows Edition', str(html), js_api=api,
                                    width=1280, height=810, min_size=(880, 620),
-                                   background_color='#090e1b')
+                                   background_color='#020b0c')
     api.window = window
     window.events.closed += lambda *args: api.close()
     webview.start(debug=False)

@@ -1,6 +1,6 @@
 {
-  "version": "0.3.0",
-  "url": "https://raw.githubusercontent.com/yukselenpel1-ship-it/jarvishan/main/downloads/JARVIS_v0.3_Windows.zip",
-  "sha256": "6ac909c5666d68add5f45297119aab9e5b376d51eb217639a68d34a5dcfcb63e",
-  "notes": "Türkçe doğal sohbet, kontrollü bilgisayar işlemleri ve mor parçacık teması."
+  "version": "0.4.0",
+  "url": "https://raw.githubusercontent.com/yukselenpel1-ship-it/jarvishan/main/downloads/JARVIS_v0.4_Windows.zip",
+  "sha256": "fc6a7378c78e506d6f987016b3955d471a2e3c85f1f0fa3a53a97395487eb033",
+  "notes": "Siyah, turkuaz ve turuncu HUD görünümü; animasyonlu merkez çekirdeği ve üç panelli sohbet."
 }
