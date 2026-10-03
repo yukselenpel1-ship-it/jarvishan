@@ -11,7 +11,7 @@ Hedef: Türkçe kişisel asistanın Vercel üzerinde mobil uyumlu web arayüzü 
 
 ## Çalışma ilkeleri
 
-Arayüz Türkçe ve koyu turkuaz/turuncu görünümde kalsın. Mobil ekranda konuşma kutusu ve işlem onayı kolay dokunulsun. API anahtarları ve Redis token'ı tarayıcıya geçmesin. Modelin işlem önerisi gerçek işlem olarak gösterilmesin. Uzak işlemler için `api/_lib.js` ve Windows `remote.py` içindeki iki ayrı izin listesi geçerli olsun.
+Arayüz Türkçe ve koyu turkuaz/turuncu görünümde kalsın. Mobil ekranda konuşma kutusu ve işlem onayı kolay dokunulsun. API anahtarları ve Redis token'ı tarayıcıya geçmesin. Modelin işlem önerisi gerçek işlem olarak gösterilmesin. Uzak işlemler için `lib/server.js` ve Windows `remote.py` içindeki iki ayrı izin listesi geçerli olsun.
 
 ## İlk geliştirme işleri
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import chat from '../api/chat.js';
 import jobs from '../api/jobs.js';
 import bridge from '../api/bridge.js';
-import {safeAction} from '../api/_lib.js';
+import {safeAction} from '../lib/server.js';
 
 function response(){return {statusCode:200,headers:{},status(n){this.statusCode=n;return this},setHeader(k,v){this.headers[k]=v;return this},json(data){this.data=data;return this}}}
 test('mobile actions reject unsafe or malformed computer commands',()=>{

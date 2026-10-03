@@ -1,4 +1,4 @@
-import {authorized,json,safeTools,safeAction} from './_lib.js';
+import {authorized,json,safeTools,safeAction} from '../lib/server.js';
 
 export default async function handler(req,res){
   if(!authorized(req))return json(res,401,{error:'Erişim kodu hatalı veya sunucuda ayarlı değil.'});

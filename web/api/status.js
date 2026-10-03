@@ -1,4 +1,4 @@
-import {authorized,configured,json,redis,heartbeatKey} from './_lib.js';
+import {authorized,configured,json,redis,heartbeatKey} from '../lib/server.js';
 export default async function handler(req,res){
   if(!authorized(req))return json(res,401,{error:'Erişim kodu hatalı.'});
   if(req.method!=='GET')return json(res,405,{error:'GET gerekli.'});
