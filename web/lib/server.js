@@ -7,16 +7,31 @@ export function authorized(req,kind='access'){
   if(!expected||expected.length<16)return false;
   return same(req.headers.authorization?.replace(/^Bearer\s+/i,'')||'',expected);
 }
-export function configured(){return Boolean(process.env.UPSTASH_REDIS_REST_URL&&process.env.UPSTASH_REDIS_REST_TOKEN)}
+const memData = new Map();
+const memQueue = [];
+
+export function configured(){
+  if (Boolean(process.env.UPSTASH_REDIS_REST_URL&&process.env.UPSTASH_REDIS_REST_TOKEN)) return true;
+  return process.env.NODE_ENV !== 'production' || process.env.JARVIS_LOCAL_BRIDGE === 'true';
+}
+
 export async function redis(...command){
-  if(!configured())throw Error('Köprü veritabanı ayarlı değil.');
-  const response=await fetch(process.env.UPSTASH_REDIS_REST_URL,{method:'POST',
-    headers:{Authorization:'Bearer '+process.env.UPSTASH_REDIS_REST_TOKEN,'Content-Type':'application/json'},
-    body:JSON.stringify(command),signal:AbortSignal.timeout(8000)});
-  if(!response.ok)throw Error('Köprü veritabanına ulaşılamadı.');
-  const payload=await response.json();
-  if(payload.error)throw Error('Köprü veritabanı hatası.');
-  return payload.result;
+  if (process.env.UPSTASH_REDIS_REST_URL&&process.env.UPSTASH_REDIS_REST_TOKEN) {
+    const response=await fetch(process.env.UPSTASH_REDIS_REST_URL,{method:'POST',
+      headers:{Authorization:'Bearer '+process.env.UPSTASH_REDIS_REST_TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify(command),signal:AbortSignal.timeout(8000)});
+    if(!response.ok)throw Error('Köprü veritabanına ulaşılamadı.');
+    const payload=await response.json();
+    if(payload.error)throw Error('Köprü veritabanı hatası.');
+    return payload.result;
+  }
+  if (!configured()) throw Error('Köprü veritabanı ayarlı değil.');
+  const [cmd, ...args] = command;
+  if (cmd === 'GET') return memData.get(args[0]) || null;
+  if (cmd === 'SET') { memData.set(args[0], args[1]); return 'OK'; }
+  if (cmd === 'RPUSH') { memQueue.push(args[1]); return memQueue.length; }
+  if (cmd === 'LPOP') return memQueue.shift() || null;
+  return null;
 }
 export const safeTools=[
   {name:'open_app',description:'Kullanıcının istediği programı Windows bilgisayarında aç',parameters:{type:'OBJECT',properties:{name:{type:'STRING',enum:['chrome','not defteri','hesap makinesi','gezgin']}},required:['name']}},

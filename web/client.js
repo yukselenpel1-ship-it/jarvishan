@@ -5,7 +5,7 @@ function mode(value){const labels={idle:['BEKLEME MODU','KONUŞMAYA HAZIR ◦ J.
 let currentAudio=null,voiceRequest=null,voiceUrl=null,lastSpoken='';
 function stopVoice(){if(voiceRequest)voiceRequest.abort();voiceRequest=null;if(currentAudio){currentAudio.pause();currentAudio=null}if(voiceUrl){URL.revokeObjectURL(voiceUrl);voiceUrl=null}if('speechSynthesis'in window)speechSynthesis.cancel()}
 function browserVoice(text){if(!('speechSynthesis'in window)){mode('idle');return}const utterance=new SpeechSynthesisUtterance(text.slice(0,1200));utterance.lang='tr-TR';utterance.volume=Number($('#volume').value)/100;utterance.rate=1.04;const voice=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().startsWith('tr'));if(voice)utterance.voice=voice;utterance.onstart=()=>mode('speaking');utterance.onend=()=>mode('idle');utterance.onerror=()=>mode('idle');speechSynthesis.speak(utterance)}
-async function speak(text){stopVoice();lastSpoken=String(text);$('#replay').hidden=false;if(Number($('#volume').value)===0){mode('idle');return}mode('thinking');$('#voice-status').textContent='ElevenLabs sesi hazırlanıyor…';const controller=new AbortController();voiceRequest=controller;try{const response=await fetch('/api/voice',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+state.code},body:JSON.stringify({text:lastSpoken.slice(0,1600)}),signal:controller.signal});if(controller.signal.aborted)return;if(!response.ok){let data={};try{data=await response.json()}catch{}throw Error(data.error||'Ses oluşturulamadı.')}const blob=await response.blob();if(controller.signal.aborted)return;voiceUrl=URL.createObjectURL(blob);currentAudio=new Audio(voiceUrl);currentAudio.volume=Number($('#volume').value)/100;currentAudio.onplay=()=>{mode('speaking');$('#voice-status').textContent='ElevenLabs · JARVIS konuşuyor'};currentAudio.onended=()=>{mode('idle');$('#voice-status').textContent='ElevenLabs sesi hazır'};currentAudio.onerror=()=>{mode('idle');$('#voice-status').textContent='Ses oynatılamadı; yeniden dene.'};await currentAudio.play()}catch(error){if(controller.signal.aborted)return;if(error.name==='NotAllowedError'){$('#voice-status').textContent='Sesi başlatmak için “Tekrar oynat” düğmesine dokun.';mode('idle');return}$('#voice-status').textContent=(error.message||'ElevenLabs kullanılamıyor.')+' Yerel ses kullanılıyor.';browserVoice(lastSpoken)}finally{if(voiceRequest===controller)voiceRequest=null}}
+async function speak(text){stopVoice();lastSpoken=String(text);$('#replay').hidden=false;if(Number($('#volume').value)===0){mode('idle');return}mode('thinking');$('#voice-status').textContent='ElevenLabs sesi hazırlanıyor…';const controller=new AbortController();voiceRequest=controller;try{const headers={'Content-Type':'application/json',Authorization:'Bearer '+state.code};const userKey=localStorage.getItem('jarvisElevenLabsKey')?.trim();if(userKey)headers['x-elevenlabs-key']=userKey;const response=await fetch('/api/voice',{method:'POST',headers,body:JSON.stringify({text:lastSpoken.slice(0,1600)}),signal:controller.signal});if(controller.signal.aborted)return;if(!response.ok){let data={};try{data=await response.json()}catch{}throw Error(data.error||'Ses oluşturulamadı.')}const blob=await response.blob();if(controller.signal.aborted)return;voiceUrl=URL.createObjectURL(blob);currentAudio=new Audio(voiceUrl);currentAudio.volume=Number($('#volume').value)/100;currentAudio.onplay=()=>{mode('speaking');$('#voice-status').textContent='ElevenLabs · JARVIS konuşuyor'};currentAudio.onended=()=>{mode('idle');$('#voice-status').textContent='ElevenLabs sesi hazır'};currentAudio.onerror=()=>{mode('idle');$('#voice-status').textContent='Ses oynatılamadı; yeniden dene.'};await currentAudio.play()}catch(error){if(controller.signal.aborted)return;if(error.name==='NotAllowedError'){$('#voice-status').textContent='Sesi başlatmak için “Tekrar oynat” düğmesine dokun.';mode('idle');return}$('#voice-status').textContent=(error.message||'ElevenLabs kullanılamıyor.')+' Yerel ses kullanılıyor.';browserVoice(lastSpoken)}finally{if(voiceRequest===controller)voiceRequest=null}}
 
 async function api(path,method='GET',body){const r=await fetch('/api/'+path,{method,headers:{'Content-Type':'application/json',Authorization:'Bearer '+state.code},body:body?JSON.stringify(body):undefined});let data;try{data=await r.json()}catch{throw Error('Sunucu yanıtı okunamadı.')}if(!r.ok)throw Error(data.error||'Bağlantı hatası.');return data}
 async function status(){if(!state.code)return;try{const data=await api('status');$('#pc-status').textContent=({online:'Windows JARVIS bağlı',offline:'Windows JARVIS çevrimdışı',not_configured:'PC köprüsü ayarlanmadı'})[data.bridge]||'PC durumu bilinmiyor';$('#pc-dot').classList.toggle('green',data.bridge==='online');$('#ai-status').textContent='SOHBETE HAZIR'}catch(e){$('#pc-status').textContent=e.message;$('#pc-dot').classList.remove('green');$('#ai-status').textContent='BAĞLANTI HATASI'}}
@@ -21,3 +21,73 @@ $('#demo').onclick=()=>speak('Merhaba. Ben JARVIS. Tüm sistemler hazır. Nasıl
 $('#volume').value=localStorage.getItem('jarvisVolume')??'70';$('#volumeText').textContent=$('#volume').value+'%';$('#volume').oninput=e=>{$('#volumeText').textContent=e.target.value+'%';localStorage.setItem('jarvisVolume',e.target.value);if(currentAudio)currentAudio.volume=Number(e.target.value)/100;if(e.target.value==='0'){stopVoice();mode('idle')}};
 const bars=$('#bars');for(let n=0;n<54;n++){const bar=document.createElement('i');bar.style.setProperty('--h',String(5+Math.abs(Math.sin(n*.68)*27)+Math.random()*13));bar.style.setProperty('--d',String(n));bars.append(bar)}
 function clock(){$('#clock').textContent=new Date().toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul'})}clock();setInterval(clock,1000);
+
+$('#open-voice-modal').onclick=()=>{
+  $('#eleven-key').value=localStorage.getItem('jarvisElevenLabsKey')||'';
+  $('#voice-modal-status').textContent='';
+  $('#voice-gate').hidden=false;
+};
+$('#close-voice-modal').onclick=()=>{$('#voice-gate').hidden=true};
+$('#save-voice-modal').onclick=async()=>{
+  const val=$('#eleven-key').value.trim();
+  if(val){
+    localStorage.setItem('jarvisElevenLabsKey',val);
+    $('#voice-modal-status').textContent='Anahtar kaydedildi. JARVIS sesi test ediliyor...';
+    try{
+      await speak('Jarvis ses sistemi doğrulandı efendim. Sistemler emrinizde.');
+      $('#voice-modal-status').textContent='Ses doğrulandı! IKne3meq5aSn9XLyUdCD sesi aktif.';
+    }catch(err){
+      $('#voice-modal-status').textContent='Hata: '+(err.message||'Ses oluşturulamadı.');
+    }
+  }else{
+    localStorage.removeItem('jarvisElevenLabsKey');
+    $('#voice-modal-status').textContent='Anahtar kaldırıldı. Varsayılan ses kullanılacak.';
+  }
+};
+$('#clear-voice-modal').onclick=()=>{
+  localStorage.removeItem('jarvisElevenLabsKey');
+  $('#eleven-key').value='';
+  $('#voice-modal-status').textContent='Anahtar temizlendi.';
+};
+
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+let recognition=null,recognizing=false;
+if(SpeechRecognition){
+  recognition=new SpeechRecognition();
+  recognition.continuous=false;
+  recognition.interimResults=true;
+  recognition.lang='tr-TR';
+  recognition.onstart=()=>{
+    recognizing=true;
+    $('#mic-btn').classList.add('listening');
+    $('#mic-btn').textContent='⏹';
+    $('#prompt').placeholder='Dinleniyor... Konuşun...';
+  };
+  recognition.onresult=e=>{
+    let transcript='';
+    for(let i=0;i<e.results.length;i++) transcript+=e.results[i][0].transcript;
+    $('#prompt').value=transcript;
+    if(e.results[0].isFinal){
+      recognition.stop();
+      send(transcript);
+    }
+  };
+  recognition.onend=()=>{
+    recognizing=false;
+    $('#mic-btn').classList.remove('listening');
+    $('#mic-btn').textContent='🎙';
+    $('#prompt').placeholder='JARVIS’e bir şey söyle...';
+  };
+  recognition.onerror=()=>{
+    recognizing=false;
+    $('#mic-btn').classList.remove('listening');
+    $('#mic-btn').textContent='🎙';
+    $('#prompt').placeholder='JARVIS’e bir şey söyle...';
+  };
+  $('#mic-btn').onclick=()=>{
+    if(recognizing) recognition.stop();
+    else{stopVoice();try{recognition.start()}catch{}}
+  };
+}else{
+  $('#mic-btn').style.display='none';
+}

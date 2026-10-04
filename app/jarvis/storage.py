@@ -5,6 +5,9 @@ from datetime import datetime
 from pathlib import Path
 
 
+from contextlib import contextmanager
+
+
 def data_dir():
     root = Path(os.environ.get('LOCALAPPDATA', Path.home() / '.local' / 'share')) / 'Jarvis'
     root.mkdir(parents=True, exist_ok=True)
@@ -21,8 +24,14 @@ class Memory:
                     due TEXT NOT NULL, delivered INTEGER NOT NULL DEFAULT 0);
             ''')
 
+    @contextmanager
     def connect(self):
-        return sqlite3.connect(self.path, timeout=10)
+        conn = sqlite3.connect(self.path, timeout=10)
+        try:
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
     def add_note(self, text):
         with self.connect() as db:

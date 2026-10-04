@@ -9,7 +9,7 @@ export default async function handler(req,res){
   const text=req.body?.text;
   if(typeof text!=='string'||!text.trim()||text.length>1600)
     return json(res,400,{error:'Seslendirme metni 1–1600 karakter olmalı.'});
-  const key=process.env.ELEVENLABS_API_KEY?.trim();
+  const key=process.env.ELEVENLABS_API_KEY?.trim()||(typeof req.headers['x-elevenlabs-key']==='string'?req.headers['x-elevenlabs-key'].trim():'')||(typeof req.body?.apiKey==='string'?req.body.apiKey.trim():'');
   if(!key)return json(res,503,{error:'ElevenLabs API anahtarı ayarlanmadı.'});
   try{
     const response=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,{
