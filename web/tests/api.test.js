@@ -54,6 +54,19 @@ test('persistent 404 checks models available to the API key',async()=>{
     for(const [key,value] of [['GEMINI_API_KEY',old.key],['JARVIS_ACCESS_CODE',old.code],['GEMINI_MODEL',old.model]]){if(value===undefined)delete process.env[key];else process.env[key]=value}
   }
 });
+test('persistent 404 reports safe project diagnosis without leaking API details',async()=>{
+  const old={key:process.env.GEMINI_API_KEY,code:process.env.JARVIS_ACCESS_CODE,model:process.env.GEMINI_MODEL,fetch:global.fetch};
+  process.env.GEMINI_API_KEY='test';process.env.JARVIS_ACCESS_CODE='a-safe-access-code-for-tests';process.env.GEMINI_MODEL='gemini-2.5-flash';
+  global.fetch=async url=>url.includes('pageSize=')?{ok:true,json:async()=>({models:[]})}:{ok:false,status:404,json:async()=>({error:{message:'Project not active; secret test'}})};
+  try{
+    const res=response();await chat({method:'POST',headers:{authorization:'Bearer a-safe-access-code-for-tests'},body:{message:'Merhaba'}},res);
+    assert.equal(res.statusCode,502);assert.match(res.data.error,/projeyi etkin görmüyor/);assert.match(res.data.error,/0 sohbet modeli/);
+    assert.doesNotMatch(res.data.error,/secret test/);
+  }finally{
+    global.fetch=old.fetch;
+    for(const [key,value] of [['GEMINI_API_KEY',old.key],['JARVIS_ACCESS_CODE',old.code],['GEMINI_MODEL',old.model]]){if(value===undefined)delete process.env[key];else process.env[key]=value}
+  }
+});
 test('job enqueue rejects unauthenticated requests before Redis',async()=>{
   const previous=process.env.JARVIS_ACCESS_CODE;process.env.JARVIS_ACCESS_CODE='a-safe-access-code-for-tests';
   try{const res=response();await jobs({method:'POST',headers:{authorization:'Bearer wrong'},body:{action:{name:'open_app',args:{name:'chrome'}}}},res);assert.equal(res.statusCode,401)}

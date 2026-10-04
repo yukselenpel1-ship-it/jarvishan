@@ -25,10 +25,17 @@ export default async function handler(req,res){
       if(listed.ok){
         const catalogue=await listed.json();
         const available=(catalogue.models||[]).filter(x=>/^models\/gemini-[a-zA-Z0-9._-]+$/.test(x.name)&&
-          x.supportedGenerationMethods?.includes('generateContent')).map(x=>x.name.slice(7));
+          (x.supportedGenerationMethods||x.supportedActions||[]).includes('generateContent')).map(x=>x.name.slice(7));
         const choice=available.find(x=>/flash/.test(x)&&!/live|image|tts|preview/.test(x))||available[0];
         if(choice&&choice!==model&&choice!=='gemini-2.5-flash')response=await generate(choice);
-        if(response.status===404)return json(res,502,{error:'Gemini bu API anahtarıyla kullanılabilen bir sohbet modeli bulamadı. Google AI Studio’da anahtarın bağlı olduğu projeyi kontrol edip yeni bir API anahtarı oluştur.'});
+        if(response.status===404){
+          let detail='';
+          try{detail=String((await response.json()).error?.message||'').toLowerCase()}catch{}
+          const reason=/project.*not active|project.*inactive/.test(detail)?'Google, anahtarın bağlı olduğu projeyi etkin görmüyor.':
+            /not found for api version|not supported for generatecontent/.test(detail)?'Bu model generateContent için kullanılamıyor.':
+            /leak|block/.test(detail)?'Google API anahtarını engellemiş.':'Google isteği 404 ile reddetti.';
+          return json(res,502,{error:`${reason} Model listesi: ${available.length} sohbet modeli. Google AI Studio’da projenin ve Gemini API erişiminin durumunu kontrol et.`});
+        }
       }else return json(res,502,{error:'Gemini API anahtarıyla model listesi alınamadı. Google AI Studio’da anahtarın etkin ve Gemini API erişimine açık olduğunu kontrol et.'});
     }
     if(!response.ok)return json(res,response.status===429?429:502,{error:response.status===429?'Gemini kullanım sınırına ulaşıldı.':`Gemini yanıt vermedi (${response.status}). Google AI Studio’da API anahtarının durumunu kontrol et.`});
