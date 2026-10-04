@@ -17,8 +17,12 @@ export default async function handler(req,res){
     const generate=name=>fetch(`https://generativelanguage.googleapis.com/v1beta/models/${name}:generateContent`,
       {method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':process.env.GEMINI_API_KEY},
        body:JSON.stringify(body),signal:AbortSignal.timeout(13000)});
+    const attempted=[model];
     let response=await generate(model);
-    if(response.status===404&&model!=='gemini-2.5-flash')response=await generate('gemini-2.5-flash');
+    if(response.status===404&&model!=='gemini-2.5-flash'){
+      attempted.push('gemini-2.5-flash');
+      response=await generate('gemini-2.5-flash');
+    }
     if(response.status===404){
       const listed=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000',
         {headers:{'x-goog-api-key':process.env.GEMINI_API_KEY},signal:AbortSignal.timeout(8000)});
@@ -26,15 +30,20 @@ export default async function handler(req,res){
         const catalogue=await listed.json();
         const available=(catalogue.models||[]).filter(x=>/^models\/gemini-[a-zA-Z0-9._-]+$/.test(x.name)&&
           (x.supportedGenerationMethods||x.supportedActions||[]).includes('generateContent')).map(x=>x.name.slice(7));
-        const choice=available.find(x=>/flash/.test(x)&&!/live|image|tts|preview/.test(x))||available[0];
-        if(choice&&choice!==model&&choice!=='gemini-2.5-flash')response=await generate(choice);
+        const choices=available.filter(x=>!attempted.includes(x)&&/flash/.test(x)&&!/live|image|tts|preview/.test(x))
+          .sort((a,b)=>b.localeCompare(a,undefined,{numeric:true})).slice(0,2);
+        for(const choice of choices){
+          attempted.push(choice);
+          response=await generate(choice);
+          if(response.status!==404)break;
+        }
         if(response.status===404){
           let detail='';
           try{detail=String((await response.json()).error?.message||'').toLowerCase()}catch{}
           const reason=/project.*not active|project.*inactive/.test(detail)?'Google, anahtarın bağlı olduğu projeyi etkin görmüyor.':
             /not found for api version|not supported for generatecontent/.test(detail)?'Bu model generateContent için kullanılamıyor.':
             /leak|block/.test(detail)?'Google API anahtarını engellemiş.':'Google isteği 404 ile reddetti.';
-          return json(res,502,{error:`${reason} Model listesi: ${available.length} sohbet modeli. Google AI Studio’da projenin ve Gemini API erişiminin durumunu kontrol et.`});
+          return json(res,502,{error:`${reason} Model listesi: ${available.length} sohbet modeli. Denenenler: ${attempted.join(', ')}. Google AI Studio’da projenin ve Gemini API erişiminin durumunu kontrol et.`});
         }
       }else return json(res,502,{error:'Gemini API anahtarıyla model listesi alınamadı. Google AI Studio’da anahtarın etkin ve Gemini API erişimine açık olduğunu kontrol et.'});
     }

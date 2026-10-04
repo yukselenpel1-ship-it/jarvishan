@@ -42,7 +42,10 @@ test('persistent 404 checks models available to the API key',async()=>{
   process.env.GEMINI_API_KEY='test';process.env.JARVIS_ACCESS_CODE='a-safe-access-code-for-tests';process.env.GEMINI_MODEL='unknown-model';
   const urls=[];
   global.fetch=async url=>{urls.push(url);
-    if(url.includes('pageSize='))return {ok:true,json:async()=>({models:[{name:'models/gemini-3.5-flash',supportedGenerationMethods:['generateContent']}]})};
+    if(url.includes('pageSize='))return {ok:true,json:async()=>({models:[
+      {name:'models/gemini-2.5-flash',supportedGenerationMethods:['generateContent']},
+      {name:'models/gemini-3.5-flash',supportedActions:['generateContent']}
+    ]})};
     return urls.length===4?{ok:true,json:async()=>({candidates:[{content:{parts:[{text:'Merhaba!'}]}}]})}:{ok:false,status:404};
   };
   try{
