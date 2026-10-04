@@ -10,15 +10,20 @@ export function authorized(req,kind='access'){
 const memData = new Map();
 const memQueue = [];
 
+function getRedisUrl() { return process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL; }
+function getRedisToken() { return process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN; }
+
 export function configured(){
-  if (Boolean(process.env.UPSTASH_REDIS_REST_URL&&process.env.UPSTASH_REDIS_REST_TOKEN)) return true;
+  if (Boolean(getRedisUrl() && getRedisToken())) return true;
   return process.env.NODE_ENV !== 'production' || process.env.JARVIS_LOCAL_BRIDGE === 'true';
 }
 
 export async function redis(...command){
-  if (process.env.UPSTASH_REDIS_REST_URL&&process.env.UPSTASH_REDIS_REST_TOKEN) {
-    const response=await fetch(process.env.UPSTASH_REDIS_REST_URL,{method:'POST',
-      headers:{Authorization:'Bearer '+process.env.UPSTASH_REDIS_REST_TOKEN,'Content-Type':'application/json'},
+  const url = getRedisUrl();
+  const token = getRedisToken();
+  if (url && token) {
+    const response=await fetch(url,{method:'POST',
+      headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
       body:JSON.stringify(command),signal:AbortSignal.timeout(8000)});
     if(!response.ok)throw Error('Köprü veritabanına ulaşılamadı.');
     const payload=await response.json();
