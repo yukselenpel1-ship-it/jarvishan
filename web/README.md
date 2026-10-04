@@ -11,6 +11,10 @@ Telefon ve bilgisayar tarayıcısında çalışan Türkçe JARVIS sohbeti. Gemin
 
 İlk sohbet için Upstash ve Windows köprüsü gerekmez. Sohbet geçmişi o sayfa açıkken bellekte tutulur; erişim kodu oturum depolamasında kalır.
 
+## ElevenLabs sesi
+
+Web sürümünde JARVIS, `IKne3meq5aSn9XLyUdCD` sesini `eleven_multilingual_v2` modeliyle kullanır. ElevenLabs hesabından alınan API anahtarını yerelde `web/.env.local` içine `ELEVENLABS_API_KEY` olarak, Vercel'de **Project Settings → Environment Variables** bölümüne aynı adla ekle ve yeniden dağıt. Ses kimliği tek başına API anahtarı değildir. Anahtar sunucuda kalır; ses dosyası erişim koduyla korunan `/api/voice` üzerinden gelir. ElevenLabs ayarlı değilse veya hizmet hata verirse tarayıcıdaki Türkçe ses kullanılır. iPhone otomatik oynatmayı engellerse **Son yanıtı tekrar oynat** düğmesine dokun.
+
 ## Vercel kurulumu
 
 1. GitHub'da `yukselenpel1-ship-it/jarvishan` deposunu Vercel'e **Import** et. **Root Directory** `web`, Framework Preset **Other**.
