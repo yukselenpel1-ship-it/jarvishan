@@ -23,7 +23,7 @@ test('Gemini text and safe action are proposed, without execution',async()=>{
     assert.equal(payload.tools[0].functionDeclarations.some(x=>x.name==='press_keys'),false);
   }finally{global.fetch=oldFetch;if(oldKey===undefined)delete process.env.GEMINI_API_KEY;else process.env.GEMINI_API_KEY=oldKey;if(oldCode===undefined)delete process.env.JARVIS_ACCESS_CODE;else process.env.JARVIS_ACCESS_CODE=oldCode}
 });
-test('unknown configured model retries the supported Gemini model',async()=>{
+test('unknown configured model retries Flash-Lite',async()=>{
   const old={key:process.env.GEMINI_API_KEY,code:process.env.JARVIS_ACCESS_CODE,model:process.env.GEMINI_MODEL,fetch:global.fetch};
   process.env.GEMINI_API_KEY='test';process.env.JARVIS_ACCESS_CODE='a-safe-access-code-for-tests';process.env.GEMINI_MODEL='unknown-model';
   const urls=[];
@@ -31,7 +31,7 @@ test('unknown configured model retries the supported Gemini model',async()=>{
   try{
     const res=response();await chat({method:'POST',headers:{authorization:'Bearer a-safe-access-code-for-tests'},body:{message:'Nasılsın?'}},res);
     assert.equal(res.statusCode,200);assert.equal(res.data.text,'İyiyim, teşekkürler.');
-    assert.match(urls[1],/models\/gemini-2\.5-flash:generateContent$/);
+    assert.match(urls[1],/models\/gemini-3\.5-flash-lite:generateContent$/);
   }finally{
     global.fetch=old.fetch;
     for(const [key,value] of [['GEMINI_API_KEY',old.key],['JARVIS_ACCESS_CODE',old.code],['GEMINI_MODEL',old.model]]){if(value===undefined)delete process.env[key];else process.env[key]=value}
@@ -43,15 +43,15 @@ test('persistent 404 checks models available to the API key',async()=>{
   const urls=[];
   global.fetch=async url=>{urls.push(url);
     if(url.includes('pageSize='))return {ok:true,json:async()=>({models:[
-      {name:'models/gemini-2.5-flash',supportedGenerationMethods:['generateContent']},
-      {name:'models/gemini-3.5-flash',supportedActions:['generateContent']}
+      {name:'models/gemini-3.5-flash-lite',supportedGenerationMethods:['generateContent']},
+      {name:'models/gemini-3.1-flash-lite',supportedActions:['generateContent']}
     ]})};
     return urls.length===4?{ok:true,json:async()=>({candidates:[{content:{parts:[{text:'Merhaba!'}]}}]})}:{ok:false,status:404};
   };
   try{
     const res=response();await chat({method:'POST',headers:{authorization:'Bearer a-safe-access-code-for-tests'},body:{message:'Merhaba'}},res);
     assert.equal(res.statusCode,200);assert.equal(res.data.text,'Merhaba!');
-    assert.match(urls[3],/models\/gemini-3\.5-flash:generateContent$/);
+    assert.match(urls[3],/models\/gemini-3\.1-flash-lite:generateContent$/);
   }finally{
     global.fetch=old.fetch;
     for(const [key,value] of [['GEMINI_API_KEY',old.key],['JARVIS_ACCESS_CODE',old.code],['GEMINI_MODEL',old.model]]){if(value===undefined)delete process.env[key];else process.env[key]=value}
@@ -59,7 +59,7 @@ test('persistent 404 checks models available to the API key',async()=>{
 });
 test('persistent 404 reports safe project diagnosis without leaking API details',async()=>{
   const old={key:process.env.GEMINI_API_KEY,code:process.env.JARVIS_ACCESS_CODE,model:process.env.GEMINI_MODEL,fetch:global.fetch};
-  process.env.GEMINI_API_KEY='test';process.env.JARVIS_ACCESS_CODE='a-safe-access-code-for-tests';process.env.GEMINI_MODEL='gemini-2.5-flash';
+  process.env.GEMINI_API_KEY='test';process.env.JARVIS_ACCESS_CODE='a-safe-access-code-for-tests';process.env.GEMINI_MODEL='gemini-3.5-flash-lite';
   global.fetch=async url=>url.includes('pageSize=')?{ok:true,json:async()=>({models:[]})}:{ok:false,status:404,json:async()=>({error:{message:'Project not active; secret test'}})};
   try{
     const res=response();await chat({method:'POST',headers:{authorization:'Bearer a-safe-access-code-for-tests'},body:{message:'Merhaba'}},res);

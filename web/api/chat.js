@@ -6,7 +6,7 @@ export default async function handler(req,res){
   const {message,history=[]}=req.body||{};
   if(typeof message!=='string'||!message.trim()||message.length>3000||!Array.isArray(history))return json(res,400,{error:'Mesaj geçersiz.'});
   if(!process.env.GEMINI_API_KEY)return json(res,503,{error:'Vercel üzerinde GEMINI_API_KEY ayarlanmadı.'});
-  const model=process.env.GEMINI_MODEL||'gemini-2.5-flash';
+  const model=process.env.GEMINI_MODEL||'gemini-3.5-flash-lite';
   if(!/^[a-zA-Z0-9._-]+$/.test(model))return json(res,500,{error:'Model adı geçersiz.'});
   const contents=history.slice(-12).filter(x=>['user','model'].includes(x?.role)&&typeof x.text==='string'&&x.text.length<=3000)
     .map(x=>({role:x.role,parts:[{text:x.text}]}));
@@ -19,9 +19,9 @@ export default async function handler(req,res){
        body:JSON.stringify(body),signal:AbortSignal.timeout(13000)});
     const attempted=[model];
     let response=await generate(model);
-    if(response.status===404&&model!=='gemini-2.5-flash'){
-      attempted.push('gemini-2.5-flash');
-      response=await generate('gemini-2.5-flash');
+    if(response.status===404&&model!=='gemini-3.5-flash-lite'){
+      attempted.push('gemini-3.5-flash-lite');
+      response=await generate('gemini-3.5-flash-lite');
     }
     if(response.status===404){
       const listed=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000',
@@ -31,7 +31,7 @@ export default async function handler(req,res){
         const available=(catalogue.models||[]).filter(x=>/^models\/gemini-[a-zA-Z0-9._-]+$/.test(x.name)&&
           (x.supportedGenerationMethods||x.supportedActions||[]).includes('generateContent')).map(x=>x.name.slice(7));
         const choices=available.filter(x=>!attempted.includes(x)&&/flash/.test(x)&&!/live|image|tts|preview/.test(x))
-          .sort((a,b)=>b.localeCompare(a,undefined,{numeric:true})).slice(0,2);
+          .sort((a,b)=>Number(b.includes('lite'))-Number(a.includes('lite'))||b.localeCompare(a,undefined,{numeric:true})).slice(0,2);
         for(const choice of choices){
           attempted.push(choice);
           response=await generate(choice);

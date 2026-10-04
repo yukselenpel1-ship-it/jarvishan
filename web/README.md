@@ -5,7 +5,7 @@ Telefon ve bilgisayar tarayıcısında çalışan Türkçe JARVIS sohbeti. Gemin
 ## Yerel çalışma
 
 1. Node.js 20+ kur.
-2. `web/.env.example` dosyasını `web/.env.local` olarak kopyala. `GEMINI_API_KEY` değerini Google AI Studio'dan al. `JARVIS_ACCESS_CODE` için en az 16 karakterlik rastgele bir kod belirle. `GEMINI_MODEL` varsayılanı `gemini-2.5-flash`; hesabında kullanılmıyorsa erişebildiğin model adıyla değiştir.
+2. `web/.env.example` dosyasını `web/.env.local` olarak kopyala. `GEMINI_API_KEY` değerini Google AI Studio'dan al. `JARVIS_ACCESS_CODE` için en az 16 karakterlik rastgele bir kod belirle. `GEMINI_MODEL` varsayılanı `gemini-3.5-flash-lite`; hesabında kullanılmıyorsa erişebildiğin model adıyla değiştir.
 3. `cd web && npm run dev` çalıştır. `http://localhost:3000` adresini aç ve erişim kodunu gir.
 4. `npm test` ile API güvenlik ve yanıt testlerini çalıştır.
 
