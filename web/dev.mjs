@@ -4,10 +4,10 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 
 const root=path.dirname(fileURLToPath(import.meta.url));
-const routes={chat:()=>import('./api/chat.js'),jobs:()=>import('./api/jobs.js'),bridge:()=>import('./api/bridge.js'),status:()=>import('./api/status.js')};
+const routes={chat:()=>import('./api/chat.js'),jobs:()=>import('./api/jobs.js'),bridge:()=>import('./api/bridge.js'),status:()=>import('./api/status.js'),voice:()=>import('./api/voice.js')};
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost:3000');
-  const send=(code,data)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data))};
+  const send=(code,data)=>{if(res.writableEnded)return;res.writeHead(code,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data))};
   if(url.pathname.startsWith('/api/')){
     const name=url.pathname.slice(5);
     if(!routes[name])return send(404,{error:'Adres bulunamadı.'});
