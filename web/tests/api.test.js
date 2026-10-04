@@ -3,9 +3,25 @@ import assert from 'node:assert/strict';
 import chat from '../api/chat.js';
 import jobs from '../api/jobs.js';
 import bridge from '../api/bridge.js';
+import voice from '../api/voice.js';
 import {safeAction} from '../lib/server.js';
 
 function response(){return {statusCode:200,headers:{},status(n){this.statusCode=n;return this},setHeader(k,v){this.headers[k]=v;return this},json(data){this.data=data;return this}}}
+test('ElevenLabs audio requires access and keeps API key server side',async()=>{
+  const old={code:process.env.JARVIS_ACCESS_CODE,key:process.env.ELEVENLABS_API_KEY,fetch:global.fetch};
+  process.env.JARVIS_ACCESS_CODE='a-safe-access-code-for-tests';process.env.ELEVENLABS_API_KEY='private-test-key';
+  let upstream;
+  global.fetch=async(url,options)=>{upstream={url,options};return {ok:true,headers:{get:()=>null},arrayBuffer:async()=>Uint8Array.of(73,68,51).buffer}};
+  try{
+    const rejected=response();await voice({method:'POST',headers:{authorization:'Bearer wrong'},body:{text:'Merhaba'}},rejected);
+    assert.equal(rejected.statusCode,401);assert.equal(upstream,undefined);
+    const sent={...response(),end(data){this.audio=data;return this}};
+    await voice({method:'POST',headers:{authorization:'Bearer a-safe-access-code-for-tests'},body:{text:'Merhaba'}},sent);
+    assert.equal(sent.statusCode,200);assert.equal(sent.headers['Content-Type'],'audio/mpeg');assert.deepEqual(sent.audio,Buffer.from([73,68,51]));
+    assert.match(upstream.url,/IKne3meq5aSn9XLyUdCD/);assert.equal(upstream.options.headers['xi-api-key'],'private-test-key');
+    assert.equal(JSON.parse(upstream.options.body).model_id,'eleven_multilingual_v2');
+  }finally{global.fetch=old.fetch;for(const [key,value] of [['JARVIS_ACCESS_CODE',old.code],['ELEVENLABS_API_KEY',old.key]]){if(value===undefined)delete process.env[key];else process.env[key]=value}}
+});
 test('mobile actions reject unsafe or malformed computer commands',()=>{
   assert.equal(safeAction({name:'press_keys',args:{keys:['ctrl','v']}}),null);
   assert.equal(safeAction({name:'open_app',args:{name:'powershell'}}),null);
