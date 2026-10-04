@@ -37,6 +37,23 @@ test('unknown configured model retries the supported Gemini model',async()=>{
     for(const [key,value] of [['GEMINI_API_KEY',old.key],['JARVIS_ACCESS_CODE',old.code],['GEMINI_MODEL',old.model]]){if(value===undefined)delete process.env[key];else process.env[key]=value}
   }
 });
+test('persistent 404 checks models available to the API key',async()=>{
+  const old={key:process.env.GEMINI_API_KEY,code:process.env.JARVIS_ACCESS_CODE,model:process.env.GEMINI_MODEL,fetch:global.fetch};
+  process.env.GEMINI_API_KEY='test';process.env.JARVIS_ACCESS_CODE='a-safe-access-code-for-tests';process.env.GEMINI_MODEL='unknown-model';
+  const urls=[];
+  global.fetch=async url=>{urls.push(url);
+    if(url.includes('pageSize='))return {ok:true,json:async()=>({models:[{name:'models/gemini-3.5-flash',supportedGenerationMethods:['generateContent']}]})};
+    return urls.length===4?{ok:true,json:async()=>({candidates:[{content:{parts:[{text:'Merhaba!'}]}}]})}:{ok:false,status:404};
+  };
+  try{
+    const res=response();await chat({method:'POST',headers:{authorization:'Bearer a-safe-access-code-for-tests'},body:{message:'Merhaba'}},res);
+    assert.equal(res.statusCode,200);assert.equal(res.data.text,'Merhaba!');
+    assert.match(urls[3],/models\/gemini-3\.5-flash:generateContent$/);
+  }finally{
+    global.fetch=old.fetch;
+    for(const [key,value] of [['GEMINI_API_KEY',old.key],['JARVIS_ACCESS_CODE',old.code],['GEMINI_MODEL',old.model]]){if(value===undefined)delete process.env[key];else process.env[key]=value}
+  }
+});
 test('job enqueue rejects unauthenticated requests before Redis',async()=>{
   const previous=process.env.JARVIS_ACCESS_CODE;process.env.JARVIS_ACCESS_CODE='a-safe-access-code-for-tests';
   try{const res=response();await jobs({method:'POST',headers:{authorization:'Bearer wrong'},body:{action:{name:'open_app',args:{name:'chrome'}}}},res);assert.equal(res.statusCode,401)}

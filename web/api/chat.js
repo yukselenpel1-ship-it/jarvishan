@@ -19,7 +19,19 @@ export default async function handler(req,res){
        body:JSON.stringify(body),signal:AbortSignal.timeout(13000)});
     let response=await generate(model);
     if(response.status===404&&model!=='gemini-2.5-flash')response=await generate('gemini-2.5-flash');
-    if(!response.ok)return json(res,response.status===429?429:502,{error:response.status===429?'Gemini kullanım sınırına ulaşıldı.':response.status===404?'Gemini modeli bulunamadı (404). Vercel GEMINI_MODEL değerini gemini-2.5-flash olarak ayarla.':`Gemini yanıt vermedi (${response.status}). API anahtarını ve model erişimini kontrol et.`});
+    if(response.status===404){
+      const listed=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000',
+        {headers:{'x-goog-api-key':process.env.GEMINI_API_KEY},signal:AbortSignal.timeout(8000)});
+      if(listed.ok){
+        const catalogue=await listed.json();
+        const available=(catalogue.models||[]).filter(x=>/^models\/gemini-[a-zA-Z0-9._-]+$/.test(x.name)&&
+          x.supportedGenerationMethods?.includes('generateContent')).map(x=>x.name.slice(7));
+        const choice=available.find(x=>/flash/.test(x)&&!/live|image|tts|preview/.test(x))||available[0];
+        if(choice&&choice!==model&&choice!=='gemini-2.5-flash')response=await generate(choice);
+        if(response.status===404)return json(res,502,{error:'Gemini bu API anahtarıyla kullanılabilen bir sohbet modeli bulamadı. Google AI Studio’da anahtarın bağlı olduğu projeyi kontrol edip yeni bir API anahtarı oluştur.'});
+      }else return json(res,502,{error:'Gemini API anahtarıyla model listesi alınamadı. Google AI Studio’da anahtarın etkin ve Gemini API erişimine açık olduğunu kontrol et.'});
+    }
+    if(!response.ok)return json(res,response.status===429?429:502,{error:response.status===429?'Gemini kullanım sınırına ulaşıldı.':`Gemini yanıt vermedi (${response.status}). Google AI Studio’da API anahtarının durumunu kontrol et.`});
     const data=await response.json(),parts=data.candidates?.[0]?.content?.parts||[];
     const text=parts.filter(x=>!x.thought&&typeof x.text==='string').map(x=>x.text).join('\n').trim();
     const actions=parts.map(x=>x.functionCall).filter(Boolean).map(x=>safeAction({name:x.name,args:x.args||{}})).filter(Boolean).slice(0,3);
