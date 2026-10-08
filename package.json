@@ -2,6 +2,14 @@
   "name": "jarvis-vercel-root",
   "private": true,
   "type": "module",
-  "scripts": {"build": "node build.mjs", "test": "cd web && npm test"},
-  "engines": {"node": ">=20"}
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "cd web && npm test",
+    "postinstall": "npm --prefix web ci",
+    "typecheck": "npm --prefix web run typecheck",
+    "lint": "npm --prefix web run lint"
+  },
+  "engines": {
+    "node": ">=20"
+  }
 }
