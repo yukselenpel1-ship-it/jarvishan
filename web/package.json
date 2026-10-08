@@ -6,30 +6,7 @@
   "scripts": {
     "build": "node build.mjs",
     "dev": "node --env-file-if-exists=.env.local dev.mjs",
-    "test": "node tests/api.test.js",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src/ui.tsx client.js audio-meter.js build.mjs dev.mjs",
-    "test:ui": "playwright test"
+    "test": "node tests/api.test.js"
   },
-  "engines": {
-    "node": ">=20"
-  },
-  "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "ogl": "^1.0.11",
-    "motion": "^12.23.24",
-    "gsap": "^3.13.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.9.3",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "esbuild": "^0.25.11",
-    "eslint": "^9.39.0",
-    "@eslint/js": "^9.39.0",
-    "typescript-eslint": "^8.46.0",
-    "globals": "^16.4.0",
-    "@playwright/test": "^1.56.0"
-  }
+  "engines": {"node": ">=20"}
 }
